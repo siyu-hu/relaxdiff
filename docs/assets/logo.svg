@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" width="360" height="80" role="img" aria-label="relaxdiff">
+  <g stroke="#1f2328" stroke-width="2.6" fill="none">
+    <rect x="6"  y="22" width="32" height="32"/>
+    <path d="M 46 38 L 78 38"           stroke-linecap="round"/>
+    <path d="M 72 31 L 78 38 L 72 45"   stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="83" y="22" width="26" height="32" fill="#0969da"/>
+  <text x="128" y="52" font-family="ui-monospace, 'SF Mono', Menlo, monospace"
+        font-size="34" font-weight="700" fill="#1f2328" letter-spacing="-0.6">
+    relax<tspan fill="#0969da">diff</tspan>
+  </text>
+</svg>

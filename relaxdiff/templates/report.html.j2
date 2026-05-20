@@ -28,13 +28,19 @@
     <div class="viewer-controls">
       <button data-mode="before">Before</button>
       <button data-mode="after">After</button>
-      <button data-mode="both" class="active">Overlay</button>
+      <button data-mode="overlay" class="active">Overlay</button>
+      <button data-mode="diff">Diff heatmap</button>
+      <span class="divider"></span>
       <button id="toggle-arrows" class="active">Displacement arrows</button>
     </div>
     <div id="viewer"></div>
-    <div style="color: var(--text-dim); font-size: 12px;">
-      Red arrows mark displacements &gt; 1.0 Å · Orange &gt; 0.3 Å · Blue smaller.
-      Before atoms are translucent in overlay mode.
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#cf222e"></span>arrow &gt; 1.0 Å</span>
+      <span><span class="legend-dot" style="background:#bf8700"></span>arrow &gt; 0.3 Å</span>
+      <span><span class="legend-dot" style="background:#0969da"></span>arrow smaller</span>
+      <span style="color: var(--text-dim);">·</span>
+      <span style="color: var(--text-dim);">Overlay: before = small ghost spheres, after = full balls &amp; sticks.</span>
+      <span style="color: var(--text-dim);">Diff heatmap: after only, colored by per-atom displacement (blue → red).</span>
     </div>
   </section>
 

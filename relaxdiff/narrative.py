@@ -24,27 +24,21 @@ def generate_narrative(
     """Return a markdown narrative. Falls back to template if LLM unavailable."""
     config = config or DEFAULT.llm
 
-    if not use_llm or not config.enabled or not os.environ.get("ANTHROPIC_API_KEY"):
+    if not use_llm or not config.enabled or not os.environ.get(config.api_key_env):
         return _fallback_template(diagnosis, geometry, symmetry)
 
     try:
-        return _call_claude(diagnosis, geometry, symmetry, config)
+        return _call_llm(diagnosis, geometry, symmetry, config)
     except Exception as e:
         return _fallback_template(diagnosis, geometry, symmetry, error=str(e))
 
 
-def _call_claude(
+def _build_user_payload(
     diagnosis: DiagnosisReport,
     geometry: GeometryDiff,
     symmetry: SymmetryDiff,
-    config: LLMConfig,
-) -> str:
-    import anthropic
-
-    system_prompt = _load_prompt("system.md")
-    examples = _load_examples()
-
-    user_payload = {
+) -> dict:
+    return {
         "formula": geometry.formula,
         "n_atoms": geometry.n_atoms,
         "overall_severity": diagnosis.overall_severity,
@@ -72,7 +66,21 @@ def _call_claude(
         )[:8],
     }
 
-    messages = []
+
+def _call_llm(
+    diagnosis: DiagnosisReport,
+    geometry: GeometryDiff,
+    symmetry: SymmetryDiff,
+    config: LLMConfig,
+) -> str:
+    """Call an OpenAI-compatible chat completion endpoint (default: DeepSeek)."""
+    from openai import OpenAI
+
+    system_prompt = _load_prompt("system.md")
+    examples = _load_examples()
+    user_payload = _build_user_payload(diagnosis, geometry, symmetry)
+
+    messages = [{"role": "system", "content": system_prompt}]
     for ex in examples:
         messages.append({
             "role": "user",
@@ -81,20 +89,17 @@ def _call_claude(
         messages.append({"role": "assistant", "content": ex["output"]})
     messages.append({"role": "user", "content": json.dumps(user_payload, indent=2)})
 
-    client = anthropic.Anthropic()
-    response = client.messages.create(
-        model=config.model,
-        max_tokens=config.max_tokens,
-        system=[
-            {
-                "type": "text",
-                "text": system_prompt,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=messages,
+    client = OpenAI(
+        api_key=os.environ[config.api_key_env],
+        base_url=config.base_url,
     )
-    return response.content[0].text.strip()
+    response = client.chat.completions.create(
+        model=config.model,
+        messages=messages,
+        max_tokens=config.max_tokens,
+        temperature=config.temperature,
+    )
+    return response.choices[0].message.content.strip()
 
 
 def _fallback_template(

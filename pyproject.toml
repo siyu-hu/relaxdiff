@@ -20,7 +20,7 @@ dependencies = [
     "scipy>=1.10",
     "jinja2>=3.1",
     "typer>=0.12",
-    "anthropic>=0.40",
+    "openai>=1.40",
 ]
 
 [project.optional-dependencies]

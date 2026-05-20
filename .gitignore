@@ -12,3 +12,12 @@ examples/data/smoke/report.html
 report.json
 .pytest_cache/
 .ruff_cache/
+
+# Secrets — never commit any of these
+.env
+.env.*
+!.env.example
+*.env
+secrets.json
+*.key
+*.pem

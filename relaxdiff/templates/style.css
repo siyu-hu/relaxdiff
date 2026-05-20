@@ -1,15 +1,17 @@
 :root {
-  --bg: #0b0d10;
-  --panel: #14181d;
-  --panel-2: #1b2027;
-  --border: #262c35;
-  --text: #e6e8eb;
-  --text-dim: #9aa3ad;
-  --accent: #5b8def;
-  --ok: #3fb950;
-  --info: #58a6ff;
-  --warn: #d29922;
-  --alert: #f85149;
+  --bg: #ffffff;
+  --panel: #fafbfc;
+  --panel-2: #f0f3f6;
+  --border: #d1d9e0;
+  --text: #1f2328;
+  --text-dim: #59636e;
+  --accent: #0969da;
+  --viewer-bg: #f6f8fa;
+
+  --ok: #1a7f37;
+  --info: #0969da;
+  --warn: #9a6700;
+  --alert: #cf222e;
 }
 
 * { box-sizing: border-box; }
@@ -29,6 +31,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: var(--bg);
 }
 
 header .title { font-size: 16px; font-weight: 600; }
@@ -42,11 +45,12 @@ header .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  border: 1px solid transparent;
 }
-.severity-ok    { background: rgba(63, 185, 80, 0.15);  color: var(--ok); }
-.severity-info  { background: rgba(88, 166, 255, 0.15); color: var(--info); }
-.severity-warn  { background: rgba(210, 153, 34, 0.18); color: var(--warn); }
-.severity-alert { background: rgba(248, 81, 73, 0.18);  color: var(--alert); }
+.severity-ok    { background: #dafbe1; color: var(--ok);    border-color: #aceebb; }
+.severity-info  { background: #ddf4ff; color: var(--info);  border-color: #b6e3ff; }
+.severity-warn  { background: #fff8c5; color: var(--warn);  border-color: #f0e2a3; }
+.severity-alert { background: #ffebe9; color: var(--alert); border-color: #ffcecb; }
 
 main {
   display: grid;
@@ -78,23 +82,48 @@ main {
 }
 
 .viewer-controls button {
-  background: var(--panel-2);
+  background: #ffffff;
   color: var(--text);
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
+  font-family: inherit;
 }
-.viewer-controls button.active { background: var(--accent); border-color: var(--accent); color: white; }
-.viewer-controls button:hover { border-color: var(--accent); }
+.viewer-controls button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.viewer-controls button:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+.viewer-controls .divider {
+  width: 1px; background: var(--border); margin: 4px 4px; align-self: stretch;
+}
 
 #viewer {
   width: 100%;
   height: 520px;
-  background: #050709;
+  background: var(--viewer-bg);
   border-radius: 8px;
   position: relative;
+  border: 1px solid var(--border);
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 6px;
 }
 
 .sidebar {
@@ -156,7 +185,8 @@ details {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 16px;
-  margin-top: 14px;
+  margin: 14px 28px;
+  max-width: 1400px;
 }
 details summary {
   cursor: pointer;

@@ -6,17 +6,19 @@
   <title>RelaxDiff · MgO — clean ionic relaxation</title>
   <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
   <style>:root {
-  --bg: #0b0d10;
-  --panel: #14181d;
-  --panel-2: #1b2027;
-  --border: #262c35;
-  --text: #e6e8eb;
-  --text-dim: #9aa3ad;
-  --accent: #5b8def;
-  --ok: #3fb950;
-  --info: #58a6ff;
-  --warn: #d29922;
-  --alert: #f85149;
+  --bg: #ffffff;
+  --panel: #fafbfc;
+  --panel-2: #f0f3f6;
+  --border: #d1d9e0;
+  --text: #1f2328;
+  --text-dim: #59636e;
+  --accent: #0969da;
+  --viewer-bg: #f6f8fa;
+
+  --ok: #1a7f37;
+  --info: #0969da;
+  --warn: #9a6700;
+  --alert: #cf222e;
 }
 
 * { box-sizing: border-box; }
@@ -36,6 +38,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: var(--bg);
 }
 
 header .title { font-size: 16px; font-weight: 600; }
@@ -49,11 +52,12 @@ header .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  border: 1px solid transparent;
 }
-.severity-ok    { background: rgba(63, 185, 80, 0.15);  color: var(--ok); }
-.severity-info  { background: rgba(88, 166, 255, 0.15); color: var(--info); }
-.severity-warn  { background: rgba(210, 153, 34, 0.18); color: var(--warn); }
-.severity-alert { background: rgba(248, 81, 73, 0.18);  color: var(--alert); }
+.severity-ok    { background: #dafbe1; color: var(--ok);    border-color: #aceebb; }
+.severity-info  { background: #ddf4ff; color: var(--info);  border-color: #b6e3ff; }
+.severity-warn  { background: #fff8c5; color: var(--warn);  border-color: #f0e2a3; }
+.severity-alert { background: #ffebe9; color: var(--alert); border-color: #ffcecb; }
 
 main {
   display: grid;
@@ -85,23 +89,48 @@ main {
 }
 
 .viewer-controls button {
-  background: var(--panel-2);
+  background: #ffffff;
   color: var(--text);
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
+  font-family: inherit;
 }
-.viewer-controls button.active { background: var(--accent); border-color: var(--accent); color: white; }
-.viewer-controls button:hover { border-color: var(--accent); }
+.viewer-controls button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+.viewer-controls button:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+.viewer-controls .divider {
+  width: 1px; background: var(--border); margin: 4px 4px; align-self: stretch;
+}
 
 #viewer {
   width: 100%;
   height: 520px;
-  background: #050709;
+  background: var(--viewer-bg);
   border-radius: 8px;
   position: relative;
+  border: 1px solid var(--border);
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+.legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 6px;
 }
 
 .sidebar {
@@ -163,7 +192,8 @@ details {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 16px;
-  margin-top: 14px;
+  margin: 14px 28px;
+  max-width: 1400px;
 }
 details summary {
   cursor: pointer;
@@ -217,13 +247,19 @@ footer a { color: var(--accent); text-decoration: none; }</style>
     <div class="viewer-controls">
       <button data-mode="before">Before</button>
       <button data-mode="after">After</button>
-      <button data-mode="both" class="active">Overlay</button>
+      <button data-mode="overlay" class="active">Overlay</button>
+      <button data-mode="diff">Diff heatmap</button>
+      <span class="divider"></span>
       <button id="toggle-arrows" class="active">Displacement arrows</button>
     </div>
     <div id="viewer"></div>
-    <div style="color: var(--text-dim); font-size: 12px;">
-      Red arrows mark displacements &gt; 1.0 Å · Orange &gt; 0.3 Å · Blue smaller.
-      Before atoms are translucent in overlay mode.
+    <div class="legend">
+      <span><span class="legend-dot" style="background:#cf222e"></span>arrow &gt; 1.0 Å</span>
+      <span><span class="legend-dot" style="background:#bf8700"></span>arrow &gt; 0.3 Å</span>
+      <span><span class="legend-dot" style="background:#0969da"></span>arrow smaller</span>
+      <span style="color: var(--text-dim);">·</span>
+      <span style="color: var(--text-dim);">Overlay: before = small ghost spheres, after = full balls &amp; sticks.</span>
+      <span style="color: var(--text-dim);">Diff heatmap: after only, colored by per-atom displacement (blue → red).</span>
     </div>
   </section>
 
@@ -448,25 +484,95 @@ footer a { color: var(--accent); text-decoration: none; }</style>
   const data = window.__RELAXDIFF__;
   if (!data) return;
 
-  const containerId = "viewer";
-  const viewer = $3Dmol.createViewer(containerId, { backgroundColor: "#050709" });
+  const viewer = $3Dmol.createViewer("viewer", { backgroundColor: "#f6f8fa" });
 
-  function addStructure(cif, opacity, hidden) {
-    const model = viewer.addModel(cif, "cif", { keepH: true });
-    model.setStyle({}, { stick: { radius: 0.12 }, sphere: { scale: 0.28, opacity: opacity } });
-    if (hidden) viewer.setStyle({ model: model }, { sphere: { hidden: true }, stick: { hidden: true } });
-    return model;
+  // Two models: 0 = before, 1 = after (aligned).
+  const beforeModel = viewer.addModel(data.before_cif, "cif", { keepH: true });
+  const afterModel  = viewer.addModel(data.after_cif,  "cif", { keepH: true });
+
+  const ARROW_BIG   = "#cf222e"; // > 1.0 Å
+  const ARROW_MID   = "#bf8700"; // > 0.3 Å
+  const ARROW_SMALL = "#0969da"; // smaller
+
+  // ---- displacement-magnitude color spectrum for the Diff mode ----
+  // 0 Å → blue, max → red.
+  function magnitudeColor(d, dMax) {
+    const t = dMax > 1e-6 ? Math.min(1, d / dMax) : 0;
+    // Interpolate blue (9,105,218) → orange (191,135,0) → red (207,34,46)
+    let r, g, b;
+    if (t < 0.5) {
+      const u = t / 0.5;
+      r = Math.round(9 + (191 - 9) * u);
+      g = Math.round(105 + (135 - 105) * u);
+      b = Math.round(218 + (0 - 218) * u);
+    } else {
+      const u = (t - 0.5) / 0.5;
+      r = Math.round(191 + (207 - 191) * u);
+      g = Math.round(135 + (34 - 135) * u);
+      b = Math.round(0 + (46 - 0) * u);
+    }
+    return `rgb(${r},${g},${b})`;
   }
 
-  const beforeModel = addStructure(data.before_cif, 0.5, false);
-  const afterModel = addStructure(data.after_cif, 1.0, false);
+  const dMax = data.max_displacement || 1.0;
+
+  // Stash displacement on each after-atom for the Diff coloring mode.
+  const afterAtomsRaw = afterModel.selectedAtoms({});
+  data.displacements.forEach((d) => {
+    const a = afterAtomsRaw[d.index];
+    if (a) {
+      a.properties = a.properties || {};
+      a.properties.disp = d.displacement;
+      a.properties.dispColor = magnitudeColor(d.displacement, dMax);
+    }
+  });
+
+  function applyStyle(mode) {
+    // mode: "before" | "after" | "overlay" | "diff"
+    if (mode === "before") {
+      viewer.setStyle({ model: beforeModel }, {
+        stick:  { radius: 0.14 },
+        sphere: { scale: 0.32 },
+      });
+      viewer.setStyle({ model: afterModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+    } else if (mode === "after") {
+      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+      viewer.setStyle({ model: afterModel }, {
+        stick:  { radius: 0.14 },
+        sphere: { scale: 0.32 },
+      });
+    } else if (mode === "overlay") {
+      // BEFORE = small ghost spheres only, no bonds → reduces visual noise.
+      viewer.setStyle({ model: beforeModel }, {
+        sphere: { scale: 0.18, opacity: 0.35 },
+        stick:  { hidden: true },
+      });
+      viewer.setStyle({ model: afterModel }, {
+        stick:  { radius: 0.14 },
+        sphere: { scale: 0.30 },
+      });
+    } else if (mode === "diff") {
+      // Hide before entirely; color after atoms by displacement magnitude.
+      // No bonds, so movement signal is dominant.
+      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+      viewer.setStyle({ model: afterModel }, { sphere: { scale: 0.34 } });
+      const atoms = afterModel.selectedAtoms({});
+      atoms.forEach((a) => {
+        if (a.properties && a.properties.dispColor) {
+          viewer.setStyle({ model: afterModel, serial: a.serial },
+                          { sphere: { scale: 0.34, color: a.properties.dispColor } });
+        }
+      });
+    }
+    viewer.render();
+  }
 
   function addArrows() {
+    viewer.removeAllShapes();
     const top = [...data.displacements]
       .sort((a, b) => b.displacement - a.displacement)
-      .slice(0, Math.min(20, data.displacements.length));
+      .slice(0, 24);
 
-    // Pull start positions from the after model atoms in input order
     const afterAtoms = afterModel.selectedAtoms({});
     top.forEach((d) => {
       if (d.displacement < 0.05) return;
@@ -477,66 +583,60 @@ footer a { color: var(--accent); text-decoration: none; }</style>
       viewer.addArrow({
         start: start,
         end: end,
-        radius: 0.06,
-        radiusRatio: 2.0,
-        color: d.displacement > 1.0 ? "#f85149" : d.displacement > 0.3 ? "#d29922" : "#58a6ff",
+        radius: 0.08,
+        radiusRatio: 2.2,
+        color: d.displacement > 1.0 ? ARROW_BIG
+              : d.displacement > 0.3 ? ARROW_MID
+              : ARROW_SMALL,
       });
     });
-  }
-
-  function addUnitCell() {
-    viewer.addUnitCell(afterModel, { box: { color: "#3a4252" } });
-  }
-
-  addArrows();
-  addUnitCell();
-  viewer.zoomTo();
-  viewer.render();
-
-  // Toggle modes
-  const state = { mode: "both", arrows: true };
-
-  function setMode(mode) {
-    state.mode = mode;
-    if (mode === "before") {
-      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
-      viewer.setStyle({ model: afterModel }, { stick: { hidden: true }, sphere: { hidden: true } });
-    } else if (mode === "after") {
-      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
-      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
-    } else {
-      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.10 }, sphere: { scale: 0.24, opacity: 0.45 } });
-      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.30 } });
-    }
+    viewer.addUnitCell(afterModel, { box: { color: "#59636e" } });
     viewer.render();
   }
 
-  function toggleArrows() {
-    state.arrows = !state.arrows;
+  function clearShapes() {
     viewer.removeAllShapes();
-    if (state.arrows) addArrows();
-    addUnitCell();
+    viewer.addUnitCell(afterModel, { box: { color: "#59636e" } });
     viewer.render();
   }
+
+  // ---- wire up controls ----
+  // Allow #before / #after / #overlay / #diff URL hash to set the initial mode,
+  // handy for screenshots and shareable links.
+  const allowedModes = ["before", "after", "overlay", "diff"];
+  const initialMode = allowedModes.includes(window.location.hash.replace("#", ""))
+    ? window.location.hash.replace("#", "")
+    : "overlay";
+
+  const state = { mode: initialMode, arrows: true };
 
   document.querySelectorAll("[data-mode]").forEach((btn) => {
     btn.addEventListener("click", () => {
       document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      setMode(btn.dataset.mode);
+      state.mode = btn.dataset.mode;
+      applyStyle(state.mode);
     });
   });
 
   const arrowsBtn = document.getElementById("toggle-arrows");
   if (arrowsBtn) {
     arrowsBtn.addEventListener("click", () => {
-      arrowsBtn.classList.toggle("active");
-      toggleArrows();
+      state.arrows = !state.arrows;
+      arrowsBtn.classList.toggle("active", state.arrows);
+      if (state.arrows) addArrows();
+      else clearShapes();
     });
   }
 
-  // Default: both view + arrows
-  setMode("both");
+  // initial render — apply state.mode (may be set by hash) and reflect on button
+  applyStyle(state.mode);
+  document.querySelectorAll("[data-mode]").forEach((b) => {
+    b.classList.toggle("active", b.dataset.mode === state.mode);
+  });
+  addArrows();
+  viewer.zoomTo();
+  viewer.render();
 })();</script>
 
 </body>

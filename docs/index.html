@@ -6,63 +6,102 @@
   <title>RelaxDiff — Demo Gallery</title>
   <style>
     :root {
-      --bg: #0b0d10; --panel: #14181d; --border: #262c35;
-      --text: #e6e8eb; --text-dim: #9aa3ad; --accent: #5b8def;
+      --bg: #ffffff; --panel: #fafbfc; --border: #d1d9e0;
+      --text: #1f2328; --text-dim: #59636e; --accent: #0969da;
+      --ok: #1a7f37; --warn: #9a6700; --alert: #cf222e;
     }
     * { box-sizing: border-box; }
     body { margin: 0; background: var(--bg); color: var(--text);
            font: 14px/1.55 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
-    header { padding: 48px 32px 24px; max-width: 980px; margin: 0 auto; }
-    header h1 { font-size: 32px; margin: 0 0 12px; }
-    header p { color: var(--text-dim); font-size: 16px; margin: 0; max-width: 640px; }
+    header { padding: 56px 32px 24px; max-width: 980px; margin: 0 auto; }
+    header .logo { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+    header .logo svg { display: block; }
+    header h1 { font-size: 30px; margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: -0.5px; }
+    header h1 .accent { color: var(--accent); }
+    header p { color: var(--text-dim); font-size: 16px; margin: 12px 0 0; max-width: 640px; }
+    header a.cta { display: inline-block; margin-top: 18px; padding: 8px 14px;
+                   border: 1px solid var(--border); border-radius: 8px;
+                   color: var(--text); text-decoration: none; font-size: 13px;
+                   font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+    header a.cta:hover { border-color: var(--accent); color: var(--accent); }
     main { padding: 24px 32px 64px; max-width: 980px; margin: 0 auto;
            display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr); }
     @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
     a.card {
-      display: block; padding: 24px;
+      display: block; padding: 22px;
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       color: inherit; text-decoration: none;
+      transition: border-color 120ms, transform 120ms;
     }
-    a.card:hover { border-color: var(--accent); }
-    a.card .case { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; }
-    a.card h3 { margin: 8px 0 6px; font-size: 18px; }
-    a.card p { margin: 0; color: var(--text-dim); }
-    footer { color: var(--text-dim); padding: 24px 32px; text-align: center; }
+    a.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    a.card .meta { display: flex; align-items: center; gap: 8px;
+                   font-size: 11px; color: var(--text-dim);
+                   text-transform: uppercase; letter-spacing: 0.06em; }
+    a.card .chip { padding: 2px 8px; border-radius: 999px; font-weight: 600;
+                   border: 1px solid transparent; font-size: 10px; }
+    a.card .chip.ok    { background: #dafbe1; color: var(--ok);    border-color: #aceebb; }
+    a.card .chip.warn  { background: #fff8c5; color: var(--warn);  border-color: #f0e2a3; }
+    a.card .chip.alert { background: #ffebe9; color: var(--alert); border-color: #ffcecb; }
+    a.card h3 { margin: 10px 0 6px; font-size: 18px; }
+    a.card p  { margin: 0; color: var(--text-dim); font-size: 13px; }
+    footer { color: var(--text-dim); padding: 24px 32px; text-align: center; font-size: 13px; }
     footer a { color: var(--accent); text-decoration: none; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>RelaxDiff</h1>
-  <p>Drop in two POSCARs. Get a relax sanity check, not a trajectory player. Below are four predefined cases — open any one for a full interactive report.</p>
+  <div class="logo">
+    <svg width="56" height="40" viewBox="0 0 56 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="3"  y="10" width="18" height="18" fill="none" stroke="#1f2328" stroke-width="2.2"/>
+      <path d="M 25 19 L 36 19"           stroke="#1f2328" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M 32 14 L 36 19 L 32 24"   stroke="#1f2328" stroke-width="2.2" fill="none"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="39" y="10" width="14" height="18" fill="#0969da"/>
+    </svg>
+    <h1>relax<span class="accent">diff</span></h1>
+  </div>
+  <p>Drop in two POSCARs. Get a relax sanity check, not a trajectory player. The four cases below show what RelaxDiff catches automatically &mdash; click any card for a full interactive report with 3D viewer, diagnosis, and narrative.</p>
+  <a class="cta" href="https://github.com/siyu-hu/relaxdiff">github.com/siyu-hu/relaxdiff →</a>
 </header>
 
 <main>
   <a class="card" href="cases/mgo_normal.html">
-    <div class="case">Case 1 · baseline</div>
+    <div class="meta">
+      <span>Case 1 · baseline</span>
+      <span class="chip ok">ok</span>
+    </div>
     <h3>MgO normal relax</h3>
     <p>What a clean relaxation looks like. Light rattle, full symmetry preserved.</p>
   </a>
   <a class="card" href="cases/srtio3_tilting.html">
-    <div class="case">Case 2 · symmetry</div>
-    <h3>SrTiO3 octahedral tilting</h3>
-    <p>Cubic perovskite → tetragonal tilted variant. Symmetry breaking, bond angle changes.</p>
+    <div class="meta">
+      <span>Case 2 · symmetry</span>
+      <span class="chip warn">warn</span>
+    </div>
+    <h3>SrTiO<sub>3</sub> octahedral tilting</h3>
+    <p>Cubic perovskite → tetragonal tilted variant. Symmetry breaking, coordination shifts.</p>
   </a>
   <a class="card" href="cases/collapse.html">
-    <div class="case">Case 3 · alert</div>
+    <div class="meta">
+      <span>Case 3 · alert</span>
+      <span class="chip alert">alert</span>
+    </div>
     <h3>Si cell collapse</h3>
-    <p>Cell pressed to ~78% of its original volume. Triggers the cell-collapse alert and full symmetry loss.</p>
+    <p>Cell pressed to ~78% of its original volume. Triggers cell-collapse alert and full symmetry loss.</p>
   </a>
   <a class="card" href="cases/tio2_phase.html">
-    <div class="case">Case 4 · phase</div>
-    <h3>TiO2 strained variant</h3>
-    <p>Large lattice strain plus heavy rattle. Cell, bonds, and coordination all shift.</p>
+    <div class="meta">
+      <span>Case 4 · phase</span>
+      <span class="chip warn">warn</span>
+    </div>
+    <h3>TiO<sub>2</sub> strained variant</h3>
+    <p>Large lattice shear plus heavy rattle. Cell, bonds, and coordination all shift.</p>
   </a>
 </main>
 
 <footer>
-  <a href="https://github.com/zoe/relaxdiff">github.com/zoe/relaxdiff</a>
+  <a href="https://github.com/siyu-hu/relaxdiff">github.com/siyu-hu/relaxdiff</a>
 </footer>
 
 </body>

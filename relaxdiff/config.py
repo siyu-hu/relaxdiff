@@ -1,5 +1,6 @@
 """Thresholds and tunable parameters."""
 
+import os
 from dataclasses import dataclass, field
 
 
@@ -18,8 +19,23 @@ class Thresholds:
 
 @dataclass
 class LLMConfig:
-    model: str = "claude-haiku-4-5-20251001"
+    """LLM provider config. Defaults to DeepSeek's OpenAI-compatible endpoint.
+
+    Both `model` and `base_url` honor the `RELAXDIFF_LLM_MODEL` and
+    `RELAXDIFF_LLM_BASE_URL` environment variables when set, so you can swap
+    providers without editing code.
+    """
+    model: str = field(
+        default_factory=lambda: os.environ.get("RELAXDIFF_LLM_MODEL", "deepseek-chat")
+    )
+    base_url: str = field(
+        default_factory=lambda: os.environ.get(
+            "RELAXDIFF_LLM_BASE_URL", "https://api.deepseek.com"
+        )
+    )
+    api_key_env: str = "DEEPSEEK_API_KEY"
     max_tokens: int = 1024
+    temperature: float = 0.4
     enabled: bool = True
 
 
