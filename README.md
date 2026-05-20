@@ -25,6 +25,26 @@
   </a>
 </p>
 
+## Quick start
+
+```bash
+git clone https://github.com/siyu-hu/relaxdiff && cd relaxdiff
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+relaxdiff before.cif after.cif -o report.html
+open report.html        # macOS — use xdg-open on Linux
+```
+
+Don't want to install anything locally? Spin up a preconfigured Codespace in your browser:
+
+<p>
+  <a href="https://codespaces.new/siyu-hu/relaxdiff?quickstart=1">
+    <img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" />
+  </a>
+</p>
+
+The Codespace auto-runs `pip install -e .` on first boot, so once it's ready you can run the CLI directly in the integrated terminal.
+
 ---
 
 > **Built for:** VASP, Quantum ESPRESSO, ABINIT, CP2K, ASE, pymatgen, MACE / CHGNet relaxations — anything that writes a CIF / POSCAR / extxyz before-and-after pair.

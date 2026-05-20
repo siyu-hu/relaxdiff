@@ -28,9 +28,34 @@
                    color: var(--text); text-decoration: none; font-size: 13px;
                    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
     header a.cta:hover { border-color: var(--accent); color: var(--accent); }
-    main { padding: 24px 32px 64px; max-width: 980px; margin: 0 auto;
+    main { padding: 24px 32px 16px; max-width: 980px; margin: 0 auto;
            display: grid; gap: 18px; grid-template-columns: repeat(2, 1fr); }
     @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+
+    .tryit {
+      max-width: 980px; margin: 32px auto 64px; padding: 0 32px;
+    }
+    .tryit h2 {
+      font-size: 16px; margin: 0 0 12px;
+      color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .tryit-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px;
+    }
+    .tryit-card p { margin: 0 0 14px; color: var(--text-dim); }
+    .tryit-card pre {
+      background: #f6f8fa; border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 13px; margin: 0; color: var(--text);
+    }
+    .tryit-card .or {
+      display: block; margin: 16px 0 12px;
+      color: var(--text-dim); font-size: 13px;
+    }
+    .tryit-card a.codespaces-badge { display: inline-block; }
+    .tryit-card a.codespaces-badge img { display: block; height: 28px; }
     a.card {
       display: block; padding: 22px;
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
@@ -116,6 +141,22 @@
     <p>Large lattice shear plus heavy rattle. Cell, bonds, and coordination all shift.</p>
   </a>
 </main>
+
+<section class="tryit">
+  <h2>Try it on your own files</h2>
+  <div class="tryit-card">
+    <p>RelaxDiff is a small Python CLI. The gallery above is just the output — point it at any two structure files (CIF, POSCAR, extxyz, pymatgen JSON) and you get one of these reports.</p>
+    <pre>git clone https://github.com/siyu-hu/relaxdiff &amp;&amp; cd relaxdiff
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -e .
+relaxdiff before.cif after.cif -o report.html
+open report.html</pre>
+    <span class="or">Don't want to install anything? Open a Codespace in your browser:</span>
+    <a class="codespaces-badge" href="https://codespaces.new/siyu-hu/relaxdiff?quickstart=1">
+      <img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" />
+    </a>
+  </div>
+</section>
 
 <footer>
   <a href="https://github.com/siyu-hu/relaxdiff">github.com/siyu-hu/relaxdiff</a>
