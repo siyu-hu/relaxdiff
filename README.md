@@ -2,7 +2,7 @@
   <img src="docs/assets/logo.svg" alt="relaxdiff" height="64" />
 </p>
 
-<h3 align="center">Drop in two POSCARs. Get a relax sanity check, not a trajectory player.</h3>
+<h3 align="center">Drop in two structures. Get a relax sanity check, not a trajectory player.</h3>
 
 <p align="center">
   <a href="https://siyu-hu.github.io/relaxdiff/"><b>Live demo</b></a> ·
@@ -25,8 +25,10 @@ Most crystal structure viewers let you **see** a relaxation — atoms in a cell,
 It diffs two structures along every axis a researcher cares about — displacement, bonds, coordination, cell, symmetry — and writes a short narrative explaining what likely happened. One command. One self-contained HTML report. No server, no toolchain.
 
 ```bash
-relaxdiff before.vasp after.vasp -o report.html
+relaxdiff before.cif after.cif -o report.html
 ```
+
+**Supported input formats:** CIF · POSCAR / CONTCAR / `.vasp` · `.xyz` / `.extxyz` · pymatgen JSON · ASE `Atoms` (when used as a library). Both files must be the same composition and atom count.
 
 ## What you get
 
