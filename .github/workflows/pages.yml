@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       use_llm:
-        description: "Use DeepSeek to (re)generate narratives (requires DEEPSEEK_API_KEY secret)"
+        description: "(Re)generate narratives with the LLM (requires RELAXDIFF_LLM_API_KEY secret)"
         type: boolean
         required: false
         default: false
@@ -46,7 +46,9 @@ jobs:
         env:
           # Only present when workflow_dispatch is triggered with use_llm=true
           # AND the secret has been configured in repo settings.
-          DEEPSEEK_API_KEY: ${{ inputs.use_llm && secrets.DEEPSEEK_API_KEY || '' }}
+          RELAXDIFF_LLM_API_KEY: ${{ inputs.use_llm && secrets.RELAXDIFF_LLM_API_KEY || '' }}
+          RELAXDIFF_LLM_MODEL: ${{ vars.RELAXDIFF_LLM_MODEL || '' }}
+          RELAXDIFF_LLM_BASE_URL: ${{ vars.RELAXDIFF_LLM_BASE_URL || '' }}
         run: |
           python examples/build.py
 

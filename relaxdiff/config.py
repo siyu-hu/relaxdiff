@@ -19,11 +19,15 @@ class Thresholds:
 
 @dataclass
 class LLMConfig:
-    """LLM provider config. Defaults to DeepSeek's OpenAI-compatible endpoint.
+    """LLM provider config — any OpenAI-compatible endpoint.
 
-    Both `model` and `base_url` honor the `RELAXDIFF_LLM_MODEL` and
-    `RELAXDIFF_LLM_BASE_URL` environment variables when set, so you can swap
-    providers without editing code.
+    Three env vars let you swap providers without editing code:
+      - `RELAXDIFF_LLM_API_KEY`   the bearer token
+      - `RELAXDIFF_LLM_BASE_URL`  the endpoint
+      - `RELAXDIFF_LLM_MODEL`     the model name
+
+    Works with OpenAI, DeepSeek, Together, Groq, Fireworks, Ollama, anything
+    that speaks the OpenAI chat-completions protocol.
     """
     model: str = field(
         default_factory=lambda: os.environ.get("RELAXDIFF_LLM_MODEL", "deepseek-chat")
@@ -33,7 +37,7 @@ class LLMConfig:
             "RELAXDIFF_LLM_BASE_URL", "https://api.deepseek.com"
         )
     )
-    api_key_env: str = "DEEPSEEK_API_KEY"
+    api_key_env: str = "RELAXDIFF_LLM_API_KEY"
     max_tokens: int = 1024
     temperature: float = 0.4
     enabled: bool = True

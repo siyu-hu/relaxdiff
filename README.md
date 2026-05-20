@@ -1,8 +1,16 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="relaxdiff" height="64" />
+  <img src="docs/assets/logo.svg" alt="RelaxDiff" height="64" />
 </p>
 
 <h3 align="center">Drop in two structures. Get a relax sanity check, not a trajectory player.</h3>
+
+<p align="center">
+  A diagnostic viewer for <b>DFT geometry-relaxation</b> output &mdash;
+  diff two crystal structures, surface every meaningful change
+  (atomic displacement, bond &amp; coordination shifts, cell strain,
+  symmetry breaking) and read a one-paragraph LLM narrative that explains
+  whether the relaxation looks reasonable.
+</p>
 
 <p align="center">
   <a href="https://siyu-hu.github.io/relaxdiff/"><b>Live demo</b></a> ·
@@ -19,16 +27,17 @@
 
 ---
 
-Most crystal structure viewers let you **see** a relaxation — atoms in a cell, maybe a trajectory player.
+> **Built for:** VASP, Quantum ESPRESSO, ABINIT, CP2K, ASE, pymatgen, MACE / CHGNet relaxations — anything that writes a CIF / POSCAR / extxyz before-and-after pair.
 
-**RelaxDiff tells you whether the relaxation looks reasonable.**
-It diffs two structures along every axis a researcher cares about — displacement, bonds, coordination, cell, symmetry — and writes a short narrative explaining what likely happened. One command. One self-contained HTML report. No server, no toolchain.
+Most crystal structure viewers let you **see** a relaxation. RelaxDiff tells you **whether it looks reasonable**.
+
+It diffs two structures along every axis a researcher cares about &mdash; per-atom displacement, bond breaking / forming, coordination changes, cell strain, space group changes &mdash; and produces a self-contained HTML report with a 3D viewer, severity-tagged findings, and a short natural-language narrative. One command. No server. No toolchain.
 
 ```bash
 relaxdiff before.cif after.cif -o report.html
 ```
 
-**Supported input formats:** CIF · POSCAR / CONTCAR / `.vasp` · `.xyz` / `.extxyz` · pymatgen JSON · ASE `Atoms` (when used as a library). Both files must be the same composition and atom count.
+**Supported input formats:** CIF · POSCAR / CONTCAR / `.vasp` · `.xyz` / `.extxyz` · pymatgen JSON · ASE `Atoms` (when used as a library). Both structures must share composition and atom count.
 
 ## What you get
 
@@ -36,7 +45,7 @@ relaxdiff before.cif after.cif -o report.html
   <tr>
     <td width="50%">
       <b>Interactive 3D diff viewer</b><br/>
-      Toggle Before / After / Overlay / Diff heatmap. In <i>Diff heatmap</i> mode every atom is colored by how far it moved — small movement blue, big movement red — so problem atoms jump out at a glance.<br/><br/>
+      Toggle Before / After / Overlay / Diff heatmap. In <i>Diff heatmap</i> mode every atom is colored by how far it moved &mdash; small movement blue, big movement red &mdash; so problem atoms jump out at a glance.<br/><br/>
       <img src="docs/assets/screenshot-diff-heatmap.png" alt="Diff heatmap mode" width="100%"/>
     </td>
     <td width="50%">
@@ -48,7 +57,7 @@ relaxdiff before.cif after.cif -o report.html
   <tr>
     <td>
       <b>LLM narrative (optional)</b><br/>
-      Reads the structured diagnosis JSON — never raw coordinates — and produces a three-paragraph plain-English read of the result, citing specific atom indices. Backed by <a href="https://platform.deepseek.com/">DeepSeek</a> (OpenAI-compatible). Without an API key, a deterministic template covers the same ground.
+      Reads the structured diagnosis JSON &mdash; never raw coordinates &mdash; and produces a three-paragraph plain-English read of the result, citing specific atom indices. Works with any OpenAI-compatible LLM endpoint (see <a href="#llm-narrative">below</a>). Without an API key, a deterministic template covers the same ground.
     </td>
     <td>
       <b>Adaptive symmetry detection</b><br/>
@@ -63,12 +72,12 @@ Four predefined cases, auto-built and deployed to the gallery:
 
 | Case | Severity | What it shows |
 |---|---|---|
-| [MgO normal relax](https://siyu-hu.github.io/relaxdiff/cases/mgo_normal.html) | ![](https://img.shields.io/badge/-OK-1a7f37?style=flat-square) | Clean baseline — what an unremarkable relaxation looks like |
+| [MgO normal relax](https://siyu-hu.github.io/relaxdiff/cases/mgo_normal.html) | ![](https://img.shields.io/badge/-OK-1a7f37?style=flat-square) | Clean baseline &mdash; what an unremarkable relaxation looks like |
 | [SrTiO₃ octahedral tilting](https://siyu-hu.github.io/relaxdiff/cases/srtio3_tilting.html) | ![](https://img.shields.io/badge/-WARN-9a6700?style=flat-square) | Cubic → tetragonal-tilted variant; symmetry breaking + coordination shifts |
 | [Si cell collapse](https://siyu-hu.github.io/relaxdiff/cases/collapse.html) | ![](https://img.shields.io/badge/-ALERT-cf222e?style=flat-square) | Cell pressed to ~78% of original volume; full symmetry loss |
 | [TiO₂ strained variant](https://siyu-hu.github.io/relaxdiff/cases/tio2_phase.html) | ![](https://img.shields.io/badge/-WARN-9a6700?style=flat-square) | Large shear + heavy rattle; broken bonds + coordination changes |
 
-Rebuild them locally in seconds (no DFT, no ML potential — just geometric construction):
+Rebuild them locally in seconds (no DFT, no ML potential &mdash; just geometric construction):
 
 ```bash
 python examples/build.py
@@ -84,10 +93,10 @@ pip install -e .
 ## Use
 
 ```bash
-relaxdiff before.vasp after.vasp -o report.html
+relaxdiff before.cif after.cif -o report.html
 ```
 
-Open `report.html` in any browser. Self-contained, no server required. Works on POSCAR / CIF / extxyz / pymatgen JSON / ASE Atoms.
+Open `report.html` in any browser. Self-contained, no server required.
 
 ### Options
 
@@ -100,26 +109,32 @@ Open `report.html` in any browser. Self-contained, no server required. Works on 
 
 ### LLM narrative
 
-The narrative layer talks to **DeepSeek**'s OpenAI-compatible API by default.
+RelaxDiff talks to **any OpenAI-compatible chat-completions endpoint** &mdash; OpenAI, DeepSeek, Together, Groq, Fireworks, Ollama, your own vLLM server, etc.
 
 ```bash
 cp .env.example .env
-# edit .env and paste your DEEPSEEK_API_KEY
+# edit .env with your LLM provider's API key, model, and base URL
 export $(grep -v '^#' .env | xargs)
-relaxdiff before.vasp after.vasp -o report.html
+relaxdiff before.cif after.cif -o report.html
 ```
 
-Without `DEEPSEEK_API_KEY` (or with `--no-llm`), the report falls back to a deterministic three-paragraph template. No internet required.
+Without `RELAXDIFF_LLM_API_KEY` (or with `--no-llm`), the report falls back to a deterministic three-paragraph template. No internet required.
 
-Want to swap providers? `RELAXDIFF_LLM_MODEL` and `RELAXDIFF_LLM_BASE_URL` redirect to any OpenAI-compatible endpoint.
+| Provider | `RELAXDIFF_LLM_MODEL` | `RELAXDIFF_LLM_BASE_URL` |
+|---|---|---|
+| DeepSeek | `deepseek-chat` | `https://api.deepseek.com` |
+| OpenAI | `gpt-4o-mini` | `https://api.openai.com/v1` |
+| Together | e.g. `meta-llama/Llama-3-8b-chat-hf` | `https://api.together.xyz/v1` |
+| Groq | e.g. `llama-3.1-70b-versatile` | `https://api.groq.com/openai/v1` |
+| Ollama (local) | e.g. `llama3` | `http://localhost:11434/v1` |
 
 ### CI / Secrets
 
-CI auto-rebuilds and deploys the gallery on every push to `main`. It uses the deterministic narrative by default — no API calls, no token cost.
+CI auto-rebuilds and deploys the gallery on every push to `main`. It uses the deterministic narrative by default &mdash; no API calls, no token cost.
 
-To regenerate narratives with DeepSeek from CI:
+To regenerate narratives with an LLM from CI:
 
-1. Repo → **Settings** → **Secrets and variables** → **Actions** → New repo secret named `DEEPSEEK_API_KEY`.
+1. Repo → **Settings** → **Secrets and variables** → **Actions** → add a repo secret named `RELAXDIFF_LLM_API_KEY`. Optionally add `RELAXDIFF_LLM_MODEL` and `RELAXDIFF_LLM_BASE_URL` as variables (not secrets).
 2. Repo → **Actions** → *Deploy demo site to GitHub Pages* → **Run workflow** → tick `use_llm`.
 
 `.env` is gitignored. CI only sees the secret on the manual `use_llm=true` path. Nothing in this repo ever stores a key in plain text.
@@ -131,12 +146,12 @@ two structures
    ↓ pymatgen StructureMatcher (Hungarian fallback)   site-by-site mapping
    ↓ geometry + symmetry analysis                     deterministic
    ↓ 11 rules + adaptive symprec                      severity-tagged findings
-   ↓ DeepSeek (OpenAI-compatible) or fallback         3-paragraph narrative
+   ↓ OpenAI-compatible LLM (or fallback template)     3-paragraph narrative
    ↓ Jinja2 + 3Dmol.js                                self-contained HTML
 report.html
 ```
 
-The LLM is the **last** thing in the pipeline and only ever sees structured JSON — atom indices, magnitudes, rule outputs — not raw coordinates. Hallucination surface stays small. See [PLAN.md](PLAN.md) for the full design.
+The LLM is the **last** thing in the pipeline and only ever sees structured JSON &mdash; atom indices, magnitudes, rule outputs &mdash; not raw coordinates. Hallucination surface stays small. See [PLAN.md](PLAN.md) for the full design.
 
 ## What it is not
 
@@ -144,6 +159,10 @@ The LLM is the **last** thing in the pipeline and only ever sees structured JSON
 - Not an MD defect analyzer (use [OVITO](https://www.ovito.org))
 - Not a VESTA plugin (VESTA has no plugin API)
 - Not a real-time interactive editor
+
+## Keywords
+
+DFT relaxation · ionic relaxation diagnostics · crystal structure diff · before/after relaxation comparison · VASP / Quantum ESPRESSO / ABINIT / CP2K post-processing · pymatgen + ASE · spglib symmetry analysis · materials informatics · interactive 3D structure viewer · LLM for materials science
 
 ## License
 
