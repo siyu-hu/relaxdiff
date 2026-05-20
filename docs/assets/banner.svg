@@ -1,27 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="RelaxDiff banner">
-  <!-- Light background with subtle rounded border -->
+  <!-- Light background with rounded border -->
   <rect width="1200" height="320" fill="#fafbfc"/>
   <rect x="1" y="1" width="1198" height="318" rx="14" ry="14" fill="none" stroke="#d1d9e0" stroke-width="2"/>
 
-  <!-- Decorative lattice dots in the background, faint -->
+  <!-- Decorative lattice dots on the right side -->
   <g fill="#d1d9e0">
-    <circle cx="80"   cy="40"  r="3"/>
-    <circle cx="140"  cy="40"  r="3"/>
-    <circle cx="200"  cy="40"  r="3"/>
-    <circle cx="80"   cy="280" r="3"/>
-    <circle cx="140"  cy="280" r="3"/>
-    <circle cx="200"  cy="280" r="3"/>
-    <circle cx="1000" cy="40"  r="3"/>
-    <circle cx="1060" cy="40"  r="3"/>
-    <circle cx="1120" cy="40"  r="3"/>
-    <circle cx="1000" cy="280" r="3"/>
-    <circle cx="1060" cy="280" r="3"/>
-    <circle cx="1120" cy="280" r="3"/>
+    <circle cx="980"  cy="60"  r="3"/>
+    <circle cx="1040" cy="60"  r="3"/>
+    <circle cx="1100" cy="60"  r="3"/>
+    <circle cx="1160" cy="60"  r="3"/>
+    <circle cx="980"  cy="120" r="3"/>
+    <circle cx="1040" cy="120" r="3"/>
+    <circle cx="1100" cy="120" r="3"/>
+    <circle cx="1160" cy="120" r="3"/>
+    <circle cx="980"  cy="180" r="3"/>
+    <circle cx="1040" cy="180" r="3"/>
+    <circle cx="1100" cy="180" r="3"/>
+    <circle cx="1160" cy="180" r="3"/>
+    <circle cx="980"  cy="240" r="3"/>
+    <circle cx="1040" cy="240" r="3"/>
+    <circle cx="1100" cy="240" r="3"/>
+    <circle cx="1160" cy="240" r="3"/>
   </g>
 
-  <!-- Mark group: lattice + Δ + distorted lattice -->
-  <g transform="translate(360, 100)">
-    <!-- Before lattice (regular) -->
+  <!-- Mark — left-aligned at x = 120 -->
+  <g transform="translate(120, 70)">
+    <!-- Before lattice -->
     <rect x="0" y="0" width="60" height="60" fill="none" stroke="#1f2328" stroke-width="3"/>
     <circle cx="0"  cy="0"  r="6" fill="#1f2328"/>
     <circle cx="60" cy="0"  r="6" fill="#1f2328"/>
@@ -41,15 +45,15 @@
     <circle cx="222" cy="64" r="6" fill="#0969da"/>
   </g>
 
-  <!-- Wordmark -->
-  <text x="600" y="218" text-anchor="middle"
+  <!-- Wordmark — left-aligned to the mark (x = 120) -->
+  <text x="120" y="222" text-anchor="start"
         font-family="ui-monospace, 'SF Mono', Menlo, monospace"
-        font-size="68" font-weight="700" fill="#1f2328" letter-spacing="-2.5">
+        font-size="62" font-weight="700" fill="#1f2328" letter-spacing="-2">
     Relax<tspan fill="#0969da">Diff</tspan>
   </text>
 
-  <!-- Slogan -->
-  <text x="600" y="262" text-anchor="middle"
+  <!-- Slogan — left-aligned -->
+  <text x="120" y="262" text-anchor="start"
         font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', sans-serif"
         font-size="20" fill="#59636e">
     Drop in two structures. Get a relax sanity check, not a trajectory player.
