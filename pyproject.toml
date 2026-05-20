@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "relaxdiff"
+version = "0.1.0"
+description = "Drop in two POSCARs. Get a relax sanity check, not a trajectory player."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Zoe" }]
+license = { text = "MIT" }
+keywords = ["materials-science", "dft", "crystal-structure", "visualization", "vasp"]
+
+dependencies = [
+    "pymatgen>=2024.1",
+    "ase>=3.22",
+    "spglib>=2.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "jinja2>=3.1",
+    "typer>=0.12",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+demo = ["mp-api", "mace-torch"]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+relaxdiff = "relaxdiff.cli:app"
+
+[project.urls]
+Repository = "https://github.com/zoe/relaxdiff"
+
+[tool.setuptools.packages.find]
+include = ["relaxdiff*"]
+
+[tool.setuptools.package-data]
+relaxdiff = ["templates/*", "prompts/*"]

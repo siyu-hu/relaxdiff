@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.DS_Store
+*.html
+!docs/**/*.html
+examples/data/smoke/report.html
+report.json
+.pytest_cache/
+.ruff_cache/

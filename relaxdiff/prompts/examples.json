@@ -1,0 +1,29 @@
+[
+  {
+    "input_summary": {
+      "formula": "MgO",
+      "n_atoms": 8,
+      "overall_severity": "ok",
+      "max_displacement": 0.04,
+      "volume_change_frac": 0.002,
+      "space_group_before": 225,
+      "space_group_after": 225,
+      "findings": ["normal_relaxation"]
+    },
+    "output": "This relaxation looks clean. The structure converged with negligible displacement and the cubic Fm-3m symmetry was preserved end-to-end.\n\nThe largest atomic displacement was 0.04 Å and the cell volume changed by only 0.2%. No bonds were broken or formed and every atom kept its original 6-fold coordination. There is nothing here that suggests an optimization problem.\n\nThis looks like a textbook ionic relaxation around an already-good starting structure. No manual review needed unless you have an external reason to doubt the input."
+  },
+  {
+    "input_summary": {
+      "formula": "TiO2",
+      "n_atoms": 12,
+      "overall_severity": "alert",
+      "max_displacement": 3.8,
+      "max_displacement_index": 4,
+      "volume_change_frac": -0.31,
+      "space_group_before": 141,
+      "space_group_after": 1,
+      "findings": ["runaway_atom", "cell_collapse", "symmetry_broken", "bond_breaking", "coordination_change"]
+    },
+    "output": "This relaxation looks broken and needs manual review before being trusted.\n\nAtom 4 (Ti) traveled 3.8 Å, the cell volume collapsed by 31%, and the original I4_1/amd symmetry dropped all the way to P1. Several Ti–O bonds broke and coordination numbers shifted across the cell. These signatures together are not consistent with a normal relaxation around a metastable basin.\n\nThe pattern is consistent with either a bad initial guess (atoms placed too close, or a swapped lattice vector) or with the optimizer crossing a barrier into a much denser polymorph. I would re-check the input POSCAR, the pseudopotentials, and the relaxation step size before drawing any physical conclusion from this final structure."
+  }
+]
