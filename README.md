@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" alt="RelaxDiff" height="64" />
+  <img src="docs/assets/banner.svg" alt="RelaxDiff — drop in two structures, get a relax sanity check" width="100%" />
 </p>
-
-<h3 align="center">Drop in two structures. Get a relax sanity check, not a trajectory player.</h3>
 
 <p align="center">
   A diagnostic viewer for <b>DFT geometry-relaxation</b> output &mdash;
@@ -14,15 +12,10 @@
 
 <p align="center">
   <a href="https://siyu-hu.github.io/relaxdiff/"><b>Live demo</b></a> ·
+  <a href="#quick-start">Quick start</a> ·
   <a href="#showcase">Showcase</a> ·
-  <a href="#install">Install</a> ·
-  <a href="#how-it-works">How it works</a>
-</p>
-
-<p align="center">
-  <a href="https://siyu-hu.github.io/relaxdiff/">
-    <img src="docs/assets/screenshot-gallery.png" alt="RelaxDiff demo gallery" width="100%" />
-  </a>
+  <a href="#how-it-works">How it works</a> ·
+  <a href="LICENSE">MIT License</a>
 </p>
 
 ## Quick start

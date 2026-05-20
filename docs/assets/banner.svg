@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="RelaxDiff banner">
+  <!-- Light background with subtle rounded border -->
+  <rect width="1200" height="320" fill="#fafbfc"/>
+  <rect x="1" y="1" width="1198" height="318" rx="14" ry="14" fill="none" stroke="#d1d9e0" stroke-width="2"/>
+
+  <!-- Decorative lattice dots in the background, faint -->
+  <g fill="#d1d9e0">
+    <circle cx="80"   cy="40"  r="3"/>
+    <circle cx="140"  cy="40"  r="3"/>
+    <circle cx="200"  cy="40"  r="3"/>
+    <circle cx="80"   cy="280" r="3"/>
+    <circle cx="140"  cy="280" r="3"/>
+    <circle cx="200"  cy="280" r="3"/>
+    <circle cx="1000" cy="40"  r="3"/>
+    <circle cx="1060" cy="40"  r="3"/>
+    <circle cx="1120" cy="40"  r="3"/>
+    <circle cx="1000" cy="280" r="3"/>
+    <circle cx="1060" cy="280" r="3"/>
+    <circle cx="1120" cy="280" r="3"/>
+  </g>
+
+  <!-- Mark group: lattice + Δ + distorted lattice -->
+  <g transform="translate(360, 100)">
+    <!-- Before lattice (regular) -->
+    <rect x="0" y="0" width="60" height="60" fill="none" stroke="#1f2328" stroke-width="3"/>
+    <circle cx="0"  cy="0"  r="6" fill="#1f2328"/>
+    <circle cx="60" cy="0"  r="6" fill="#1f2328"/>
+    <circle cx="0"  cy="60" r="6" fill="#1f2328"/>
+    <circle cx="60" cy="60" r="6" fill="#1f2328"/>
+
+    <!-- Delta -->
+    <text x="84" y="42" font-family="ui-monospace, 'SF Mono', Menlo, monospace"
+          font-size="42" font-weight="700" fill="#0969da">Δ</text>
+
+    <!-- After lattice (distorted) -->
+    <path d="M 154 -8 L 218 6 L 222 64 L 152 56 Z"
+          fill="none" stroke="#0969da" stroke-width="3"/>
+    <circle cx="154" cy="-8" r="6" fill="#0969da"/>
+    <circle cx="218" cy="6"  r="6" fill="#0969da"/>
+    <circle cx="152" cy="56" r="6" fill="#0969da"/>
+    <circle cx="222" cy="64" r="6" fill="#0969da"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="600" y="218" text-anchor="middle"
+        font-family="ui-monospace, 'SF Mono', Menlo, monospace"
+        font-size="68" font-weight="700" fill="#1f2328" letter-spacing="-2.5">
+    Relax<tspan fill="#0969da">Diff</tspan>
+  </text>
+
+  <!-- Slogan -->
+  <text x="600" y="262" text-anchor="middle"
+        font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', sans-serif"
+        font-size="20" fill="#59636e">
+    Drop in two structures. Get a relax sanity check, not a trajectory player.
+  </text>
+</svg>
