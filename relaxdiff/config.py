@@ -12,8 +12,8 @@ class Thresholds:
     volume_alert: float = 0.15
     shear_warn: float = 0.05            # off-diagonal strain
     bond_length_change_warn: float = 0.15  # fraction
-    symprec_scan: tuple = (1e-5, 1e-3, 1e-2, 1e-1)
-    default_symprec: float = 1e-3
+    symprec_scan: tuple = (1e-3, 1e-2, 5e-2, 1e-1, 2e-1)
+    default_symprec: float = 0.1
 
 
 @dataclass

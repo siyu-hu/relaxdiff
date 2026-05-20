@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-demo = ["mp-api", "mace-torch"]
+demo = ["mp-api"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]

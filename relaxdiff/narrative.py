@@ -103,41 +103,107 @@ def _fallback_template(
     symmetry: SymmetryDiff,
     error: str | None = None,
 ) -> str:
-    """Deterministic narrative so the pipeline always produces output."""
+    """Deterministic narrative so the pipeline always produces output.
+
+    Three short paragraphs, modelled on the prompt the LLM would have followed:
+    verdict, specific evidence, and a suggested next step.
+    """
     sev = diagnosis.overall_severity
     formula = geometry.formula
     n = geometry.n_atoms
-    dv = geometry.cell.volume_change_frac * 100
+    dv_pct = geometry.cell.volume_change_frac * 100
+    rmsd = geometry.rmsd
+    max_d = geometry.max_displacement
+    max_idx = geometry.max_displacement_index
+    max_elem = geometry.per_atom[max_idx].element if geometry.per_atom else "?"
     sg_b = symmetry.before.space_group_symbol
     sg_a = symmetry.after.space_group_symbol
+    sg_changed = symmetry.space_group_changed
+    bonds_broken = diagnosis.summary_stats.get("bonds_broken", 0)
+    bonds_formed = diagnosis.summary_stats.get("bonds_formed", 0)
 
     verdict = {
-        "ok": "This relaxation looks clean.",
-        "info": "This relaxation completed with minor changes.",
-        "warn": "This relaxation has notable changes worth reviewing.",
-        "alert": "This relaxation looks broken and needs manual review.",
+        "ok": f"This relaxation of {formula} looks clean.",
+        "info": f"This relaxation of {formula} completed with only minor changes.",
+        "warn": f"This relaxation of {formula} has notable changes worth a closer look.",
+        "alert": f"This relaxation of {formula} looks broken and needs manual review before being trusted.",
     }[sev]
 
-    lines = [
-        f"{verdict} The structure is {formula} with {n} atoms.",
-        "",
-        f"Maximum atomic displacement was {geometry.max_displacement:.2f} Å "
-        f"(RMSD {geometry.rmsd:.3f} Å). Cell volume changed by {dv:+.1f}%. "
-        f"Space group {sg_b} → {sg_a}.",
-    ]
+    # Paragraph 1: verdict + headline numbers
+    headline_bits = []
+    if max_d > 0.05:
+        headline_bits.append(f"the largest atomic displacement is {max_d:.2f} Å "
+                             f"(atom {max_idx}, {max_elem})")
+    if abs(dv_pct) > 0.5:
+        sign = "+" if dv_pct > 0 else ""
+        headline_bits.append(f"cell volume changed by {sign}{dv_pct:.1f}%")
+    if sg_changed:
+        headline_bits.append(f"space group went from {sg_b} to {sg_a}")
+    headline = "; ".join(headline_bits) if headline_bits else (
+        "atoms barely moved and the cell stayed put"
+    )
+    para1 = f"{verdict} Overall RMSD is {rmsd:.3f} Å across {n} atoms — {headline}."
 
+    # Paragraph 2: specific evidence from the top findings
     notable = [f for f in diagnosis.findings if f.severity in {"warn", "alert"}]
     if notable:
-        lines.append("")
-        lines.append("Notable findings:")
-        for f in notable:
-            lines.append(f"  - [{f.severity.upper()}] {f.short}")
+        evidence_parts = []
+        for f in notable[:4]:
+            evidence_parts.append(f.short.rstrip("."))
+        if bonds_broken or bonds_formed:
+            bond_part = []
+            if bonds_broken:
+                bond_part.append(f"{bonds_broken} bond(s) broken")
+            if bonds_formed:
+                bond_part.append(f"{bonds_formed} new bond(s) formed")
+            evidence_parts.append(" and ".join(bond_part))
+        para2 = "Specifically: " + "; ".join(evidence_parts) + "."
+    else:
+        para2 = (
+            "No notable findings tripped any of the diagnostic rules. "
+            f"Maximum displacement {max_d:.2f} Å stayed below the warn "
+            f"threshold and no bonds were broken or formed."
+        )
 
+    # Paragraph 3: interpretation hint
+    if sev == "alert":
+        para3 = (
+            "This pattern is consistent with either a poor initial guess "
+            "(misplaced atoms, wrong lattice scaling) or the optimizer "
+            "crossing a barrier into a different basin. Re-check the input "
+            "geometry and optimizer settings before drawing physical conclusions."
+        )
+    elif sev == "warn":
+        if sg_changed:
+            para3 = (
+                "The symmetry change is the most informative signal here — "
+                "worth checking whether it reflects a real distortion (e.g. "
+                "Jahn-Teller, octahedral tilt, phase transition) or is an "
+                "artifact of the starting configuration."
+            )
+        elif bonds_broken or bonds_formed:
+            para3 = (
+                "Bond topology changed during the optimization, which is unusual "
+                "for a routine ionic relaxation. Inspect the listed atoms to "
+                "decide whether this represents a real reconstruction."
+            )
+        else:
+            para3 = (
+                "Changes are localized rather than catastrophic. A spot check "
+                "of the listed atoms is probably enough to clear this one."
+            )
+    elif sev == "info":
+        para3 = "Nothing here suggests an optimization problem."
+    else:
+        para3 = (
+            "Looks like a textbook ionic relaxation around an already-good "
+            "starting structure. No manual review needed."
+        )
+
+    paragraphs = [para1, para2, para3]
     if error:
-        lines.append("")
-        lines.append(f"(LLM narrative unavailable: {error})")
-
-    return "\n".join(lines)
+        paragraphs.append(f"(LLM narrative unavailable: {error})")
+    return "\n\n".join(paragraphs)
 
 
 def _load_prompt(name: str) -> str:

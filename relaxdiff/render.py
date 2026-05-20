@@ -5,8 +5,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pymatgen.core import Structure
+
+
+class _NumpyJSONEncoder(json.JSONEncoder):
+    """Make numpy scalars and arrays JSON-serializable."""
+
+    def default(self, o):
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return super().default(o)
 
 from relaxdiff.diagnose import DiagnosisReport
 from relaxdiff.geometry import GeometryDiff
@@ -70,7 +84,7 @@ def render_report(
     }
 
     html = template.render(
-        payload_json=json.dumps(payload),
+        payload_json=json.dumps(payload, cls=_NumpyJSONEncoder),
         payload=payload,
     )
 

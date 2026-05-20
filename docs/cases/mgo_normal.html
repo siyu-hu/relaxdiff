@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RelaxDiff · MgO — clean ionic relaxation</title>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <style>:root {
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #1b2027;
+  --border: #262c35;
+  --text: #e6e8eb;
+  --text-dim: #9aa3ad;
+  --accent: #5b8def;
+  --ok: #3fb950;
+  --info: #58a6ff;
+  --warn: #d29922;
+  --alert: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .title { font-size: 16px; font-weight: 600; }
+header .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+
+.severity-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.severity-ok    { background: rgba(63, 185, 80, 0.15);  color: var(--ok); }
+.severity-info  { background: rgba(88, 166, 255, 0.15); color: var(--info); }
+.severity-warn  { background: rgba(210, 153, 34, 0.18); color: var(--warn); }
+.severity-alert { background: rgba(248, 81, 73, 0.18);  color: var(--alert); }
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  padding: 20px 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.viewer-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viewer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-controls button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.viewer-controls button.active { background: var(--accent); border-color: var(--accent); color: white; }
+.viewer-controls button:hover { border-color: var(--accent); }
+
+#viewer {
+  width: 100%;
+  height: 520px;
+  background: #050709;
+  border-radius: 8px;
+  position: relative;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.narrative p { margin: 0 0 10px; }
+.narrative p:last-child { margin-bottom: 0; }
+
+.finding {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.finding:first-child { border-top: none; }
+.finding .pill {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 8px;
+}
+.finding .pill.ok    { background: var(--ok); }
+.finding .pill.info  { background: var(--info); }
+.finding .pill.warn  { background: var(--warn); }
+.finding .pill.alert { background: var(--alert); }
+.finding .body { flex: 1; }
+.finding .rule { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.finding .short { font-size: 13px; margin-top: 2px; }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.stat-label { color: var(--text-dim); font-size: 12px; }
+.stat-value { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+details {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+}
+details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+details[open] summary { margin-bottom: 10px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+table th, table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+table th { color: var(--text-dim); font-weight: 500; }
+
+footer {
+  padding: 20px 28px;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+footer a { color: var(--accent); text-decoration: none; }</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">RelaxDiff · MgO — clean ionic relaxation</div>
+    <div class="subtitle">
+      MgO · 16 atoms ·
+      RMSD 0.010 Å ·
+      ΔV +1.5%
+    </div>
+  </div>
+  <div class="severity-chip severity-ok">
+    ok
+  </div>
+</header>
+
+<main>
+  <section class="viewer-card">
+    <div class="viewer-controls">
+      <button data-mode="before">Before</button>
+      <button data-mode="after">After</button>
+      <button data-mode="both" class="active">Overlay</button>
+      <button id="toggle-arrows" class="active">Displacement arrows</button>
+    </div>
+    <div id="viewer"></div>
+    <div style="color: var(--text-dim); font-size: 12px;">
+      Red arrows mark displacements &gt; 1.0 Å · Orange &gt; 0.3 Å · Blue smaller.
+      Before atoms are translucent in overlay mode.
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="card narrative">
+      <h3>Narrative</h3>
+      <p>This relaxation of MgO looks clean. Overall RMSD is 0.010 Å across 16 atoms — cell volume changed by +1.5%.</p>
+<p>No notable findings tripped any of the diagnostic rules. Maximum displacement 0.02 Å stayed below the warn threshold and no bonds were broken or formed.</p>
+<p>Looks like a textbook ionic relaxation around an already-good starting structure. No manual review needed.</p>
+    </div>
+
+    <div class="card">
+      <h3>Findings (1)</h3>
+      
+      <div class="finding">
+        <div class="pill ok"></div>
+        <div class="body">
+          <div class="rule">normal_relaxation</div>
+          <div class="short">No notable structural changes detected.</div>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="card">
+      <h3>Summary stats</h3>
+      <div class="stats">
+        <div class="stat-label">Max displacement</div>
+        <div class="stat-value">0.024 Å</div>
+        <div class="stat-label">RMSD</div>
+        <div class="stat-value">0.0101 Å</div>
+        <div class="stat-label">Volume Δ</div>
+        <div class="stat-value">+1.51%</div>
+        <div class="stat-label">Space group</div>
+        <div class="stat-value">Fm-3m → Fm-3m</div>
+        <div class="stat-label">Bonds broken</div>
+        <div class="stat-value">0</div>
+        <div class="stat-label">Bonds formed</div>
+        <div class="stat-value">0</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<details>
+  <summary>Per-atom displacement table</summary>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Element</th><th>Displacement (Å)</th><th>CN before</th><th>CN after</th><th>ΔCN</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>0</td>
+        <td>Mg</td>
+        <td>0.012</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>Mg</td>
+        <td>0.011</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>Mg</td>
+        <td>0.004</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>Mg</td>
+        <td>0.001</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>Mg</td>
+        <td>0.009</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>Mg</td>
+        <td>0.002</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>Mg</td>
+        <td>0.013</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>7</td>
+        <td>Mg</td>
+        <td>0.009</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>8</td>
+        <td>O</td>
+        <td>0.001</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>O</td>
+        <td>0.002</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>O</td>
+        <td>0.006</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>O</td>
+        <td>0.009</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>12</td>
+        <td>O</td>
+        <td>0.012</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>13</td>
+        <td>O</td>
+        <td>0.024</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>14</td>
+        <td>O</td>
+        <td>0.012</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>15</td>
+        <td>O</td>
+        <td>0.005</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</details>
+
+<details>
+  <summary>Bond changes (0)</summary>
+  
+  <div style="color: var(--text-dim);">No notable bond changes.</div>
+  
+</details>
+
+<footer>
+  Generated by <a href="https://github.com/zoe/relaxdiff">RelaxDiff</a>.
+  Drop two structures, get a sanity check.
+</footer>
+
+<script id="relaxdiff-payload" type="application/json">{"title": "RelaxDiff \u00b7 MgO \u2014 clean ionic relaxation", "narrative_html": "<p>This relaxation of MgO looks clean. Overall RMSD is 0.010 \u00c5 across 16 atoms \u2014 cell volume changed by +1.5%.</p>\n<p>No notable findings tripped any of the diagnostic rules. Maximum displacement 0.02 \u00c5 stayed below the warn threshold and no bonds were broken or formed.</p>\n<p>Looks like a textbook ionic relaxation around an already-good starting structure. No manual review needed.</p>", "diagnosis": {"findings": [{"rule": "normal_relaxation", "severity": "ok", "short": "No notable structural changes detected.", "magnitude": 0.0, "atoms_involved": [], "detail": {}}], "overall_severity": "ok", "summary_stats": {"max_displacement": 0.02368448926030117, "rmsd": 0.010056639855613827, "volume_change_frac": 0.015075124999999981, "space_group_before": 225, "space_group_after": 225, "bonds_broken": 0, "bonds_formed": 0, "n_atoms_moved_over_0p5A": 0}}, "geometry": {"per_atom": [{"index": 0, "element": "Mg", "displacement": 0.012364828656047004, "displacement_vec": [0.00878044388574872, -1.1296684386524217e-05, 0.008705898302159346], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 1, "element": "Mg", "displacement": 0.010660604030919023, "displacement_vec": [0.007525017996660321, -2.3217893305992107e-05, 0.0075512941528863555], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 2, "element": "Mg", "displacement": 0.0036342677268741794, "displacement_vec": [-0.0025358841391632182, 1.4121270798961899e-05, -0.002603266051146264], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 3, "element": "Mg", "displacement": 0.0006219827918568934, "displacement_vec": [0.0004290518322629855, 6.747585570734881e-06, 0.0004502572472341075], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 4, "element": "Mg", "displacement": 0.009032763459916484, "displacement_vec": [-0.006355579754800831, 3.9368639102478906e-05, -0.006418401032455314], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 5, "element": "Mg", "displacement": 0.001713974247861897, "displacement_vec": [-0.00120841250819157, -1.7309347485301055e-05, -0.0012153794958240606], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 6, "element": "Mg", "displacement": 0.013193767819571397, "displacement_vec": [0.009331632041952118, -5.096973719779578e-07, 0.009327172800510286], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 7, "element": "Mg", "displacement": 0.009219450827942179, "displacement_vec": [0.006504282135212503, 4.0656765844854106e-08, 0.00653395649455567], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 8, "element": "O", "displacement": 0.0010904815014046584, "displacement_vec": [-0.0007739820355003326, -4.516542236853116e-08, -0.0007681807805384125], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 9, "element": "O", "displacement": 0.0021439937365404175, "displacement_vec": [0.0015571254157515765, -9.832007854440553e-06, 0.0014737614846258439], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 10, "element": "O", "displacement": 0.006423653497056024, "displacement_vec": [-0.004556116107953517, 3.8059517571328273e-06, -0.004528257476758339], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 11, "element": "O", "displacement": 0.008743475467608975, "displacement_vec": [-0.006179834383828749, -8.057289741409052e-06, -0.006185300746221639], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 12, "element": "O", "displacement": 0.012148754827192122, "displacement_vec": [0.008566305266795207, 1.9058072261934168e-05, 0.008614539727529395], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 13, "element": "O", "displacement": 0.02368448926030117, "displacement_vec": [-0.016778676505927154, -2.963033363224162e-06, -0.016716190877445823], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 14, "element": "O", "displacement": 0.0115064753695606, "displacement_vec": [-0.008141364339201368, -2.9301684580701686e-05, -0.008131193241951992], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 15, "element": "O", "displacement": 0.0054770200678084776, "displacement_vec": [0.003835991200185365, 1.9390627254848962e-05, 0.003909289492842898], "cn_before": 6, "cn_after": 6, "cn_change": 0}], "bond_changes": [], "cell": {"a_before": 5.9538390975907305, "a_after": 5.983608293078683, "b_before": 5.9538390975907305, "b_after": 5.983608293078683, "c_before": 5.9538390975907305, "c_after": 5.983608293078683, "alpha_before": 60.00000000000001, "alpha_after": 59.99999999999999, "beta_before": 60.00000000000001, "beta_after": 59.99999999999999, "gamma_before": 60.00000000000001, "gamma_after": 59.99999999999999, "volume_before": 149.236922, "volume_after": 151.48668725376524, "volume_change_frac": 0.015075124999999981}, "strain": [[0.004999999999999893, 0.0, 0.0], [0.0, 0.004999999999999893, 0.0], [0.0, 0.0, 0.004999999999999893]], "rotation": [[0.0, -5.356161240508421e-17, 1.0], [-5.356161240508421e-17, -1.0, -5.356161240508421e-17], [1.0, -5.356161240508421e-17, 0.0]], "rmsd": 0.010056639855613827, "max_displacement": 0.02368448926030117, "max_displacement_index": 13, "formula": "MgO", "n_atoms": 16}, "symmetry": {"before": {"space_group_number": 225, "space_group_symbol": "Fm-3m", "point_group": "m-3m", "crystal_system": "cubic", "n_symmetry_ops": 384, "symprec": 0.1}, "after": {"space_group_number": 225, "space_group_symbol": "Fm-3m", "point_group": "m-3m", "crystal_system": "cubic", "n_symmetry_ops": 384, "symprec": 0.1}, "space_group_changed": false, "direction": "same", "tolerance_scan": [{"symprec": 0.001, "before_sg": 225, "after_sg": 1, "before_symbol": "Fm-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.01, "before_sg": 225, "after_sg": 1, "before_symbol": "Fm-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.05, "before_sg": 225, "after_sg": 8, "before_symbol": "Fm-3m", "after_symbol": "Cm", "changed": true}, {"symprec": 0.1, "before_sg": 225, "after_sg": 225, "before_symbol": "Fm-3m", "after_symbol": "Fm-3m", "changed": false}, {"symprec": 0.2, "before_sg": 225, "after_sg": 225, "before_symbol": "Fm-3m", "after_symbol": "Fm-3m", "changed": false}]}, "before_cif": "# generated using pymatgen\ndata_MgO\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   5.95383910\n_cell_length_b   5.95383910\n_cell_length_c   5.95383910\n_cell_angle_alpha   60.00000000\n_cell_angle_beta   60.00000000\n_cell_angle_gamma   60.00000000\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   MgO\n_chemical_formula_sum   'Mg8 O8'\n_cell_volume   149.23692200\n_cell_formula_units_Z   8\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  Mg  Mg0  1  0.00000000  0.00000000  0.00000000  1\n  Mg  Mg1  1  0.00000000  0.00000000  0.50000000  1\n  Mg  Mg2  1  0.00000000  0.50000000  -0.00000000  1\n  Mg  Mg3  1  0.00000000  0.50000000  0.50000000  1\n  Mg  Mg4  1  0.50000000  0.00000000  0.00000000  1\n  Mg  Mg5  1  0.50000000  0.00000000  0.50000000  1\n  Mg  Mg6  1  0.50000000  0.50000000  0.00000000  1\n  Mg  Mg7  1  0.50000000  0.50000000  0.50000000  1\n  O  O8  1  -0.25000000  0.25000000  0.25000000  1\n  O  O9  1  -0.25000000  0.25000000  0.75000000  1\n  O  O10  1  -0.25000000  0.75000000  0.25000000  1\n  O  O11  1  -0.25000000  0.75000000  0.75000000  1\n  O  O12  1  0.25000000  0.25000000  0.25000000  1\n  O  O13  1  0.25000000  0.25000000  0.75000000  1\n  O  O14  1  0.25000000  0.75000000  0.25000000  1\n  O  O15  1  0.25000000  0.75000000  0.75000000  1\n", "after_cif": "# generated using pymatgen\ndata_MgO\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   5.98360829\n_cell_length_b   5.98360829\n_cell_length_c   5.98360829\n_cell_angle_alpha   60.00000000\n_cell_angle_beta   60.00000000\n_cell_angle_gamma   60.00000000\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   MgO\n_chemical_formula_sum   'Mg8 O8'\n_cell_volume   151.48668725\n_cell_formula_units_Z   8\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  Mg  Mg_1  1  0.00407802  0.00153492  -0.00300470  1\n  Mg  Mg_4  1  -0.00014529  0.00068308  0.50235126  1\n  Mg  Mg_3  1  0.00253020  0.50006202  -0.00387189  1\n  Mg  Mg_2  1  -0.00132793  0.50042472  0.50068683  1\n  Mg  Mg_7  1  0.50111414  0.00035693  -0.00485463  1\n  Mg  Mg_6  1  0.50115327  -0.00110944  0.50049132  1\n  Mg  Mg_5  1  0.50023605  0.50218627  -0.00018763  1\n  Mg  Mg_8  1  0.49858836  0.50154655  0.50140778  1\n  O  O_6  1  -0.25027345  0.24981516  0.25027774  1\n  O  O_7  1  -0.24557264  0.24989199  0.74650680  1\n  O  O_8  1  -0.25150426  0.74910459  0.25114265  1\n  O  O_5  1  -0.24935755  0.74815235  0.75012308  1\n  O  O_4  1  0.24680321  0.25294076  0.25138605  1\n  O  O_1  1  0.24717232  0.24589115  0.75310920  1\n  O  O_2  1  0.25090882  0.74668021  0.25187519  1\n  O  O_3  1  0.24559673  0.75183874  0.75256093  1\n", "displacements": [{"index": 0, "element": "Mg", "displacement": 0.012364828656047004, "vec": [0.00878044388574872, -1.1296684386524217e-05, 0.008705898302159346], "cn_before": 6, "cn_after": 6}, {"index": 1, "element": "Mg", "displacement": 0.010660604030919023, "vec": [0.007525017996660321, -2.3217893305992107e-05, 0.0075512941528863555], "cn_before": 6, "cn_after": 6}, {"index": 2, "element": "Mg", "displacement": 0.0036342677268741794, "vec": [-0.0025358841391632182, 1.4121270798961899e-05, -0.002603266051146264], "cn_before": 6, "cn_after": 6}, {"index": 3, "element": "Mg", "displacement": 0.0006219827918568934, "vec": [0.0004290518322629855, 6.747585570734881e-06, 0.0004502572472341075], "cn_before": 6, "cn_after": 6}, {"index": 4, "element": "Mg", "displacement": 0.009032763459916484, "vec": [-0.006355579754800831, 3.9368639102478906e-05, -0.006418401032455314], "cn_before": 6, "cn_after": 6}, {"index": 5, "element": "Mg", "displacement": 0.001713974247861897, "vec": [-0.00120841250819157, -1.7309347485301055e-05, -0.0012153794958240606], "cn_before": 6, "cn_after": 6}, {"index": 6, "element": "Mg", "displacement": 0.013193767819571397, "vec": [0.009331632041952118, -5.096973719779578e-07, 0.009327172800510286], "cn_before": 6, "cn_after": 6}, {"index": 7, "element": "Mg", "displacement": 0.009219450827942179, "vec": [0.006504282135212503, 4.0656765844854106e-08, 0.00653395649455567], "cn_before": 6, "cn_after": 6}, {"index": 8, "element": "O", "displacement": 0.0010904815014046584, "vec": [-0.0007739820355003326, -4.516542236853116e-08, -0.0007681807805384125], "cn_before": 6, "cn_after": 6}, {"index": 9, "element": "O", "displacement": 0.0021439937365404175, "vec": [0.0015571254157515765, -9.832007854440553e-06, 0.0014737614846258439], "cn_before": 6, "cn_after": 6}, {"index": 10, "element": "O", "displacement": 0.006423653497056024, "vec": [-0.004556116107953517, 3.8059517571328273e-06, -0.004528257476758339], "cn_before": 6, "cn_after": 6}, {"index": 11, "element": "O", "displacement": 0.008743475467608975, "vec": [-0.006179834383828749, -8.057289741409052e-06, -0.006185300746221639], "cn_before": 6, "cn_after": 6}, {"index": 12, "element": "O", "displacement": 0.012148754827192122, "vec": [0.008566305266795207, 1.9058072261934168e-05, 0.008614539727529395], "cn_before": 6, "cn_after": 6}, {"index": 13, "element": "O", "displacement": 0.02368448926030117, "vec": [-0.016778676505927154, -2.963033363224162e-06, -0.016716190877445823], "cn_before": 6, "cn_after": 6}, {"index": 14, "element": "O", "displacement": 0.0115064753695606, "vec": [-0.008141364339201368, -2.9301684580701686e-05, -0.008131193241951992], "cn_before": 6, "cn_after": 6}, {"index": 15, "element": "O", "displacement": 0.0054770200678084776, "vec": [0.003835991200185365, 1.9390627254848962e-05, 0.003909289492842898], "cn_before": 6, "cn_after": 6}], "max_displacement": 0.02368448926030117, "severity_overall": "ok", "viewer_lib": "embedded", "threedmol_url": "https://3Dmol.org/build/3Dmol-min.js"}</script>
+<script>
+  window.__RELAXDIFF__ = JSON.parse(document.getElementById("relaxdiff-payload").textContent);
+</script>
+<script>// In-page viewer logic. Reads window.__RELAXDIFF__ payload and drives 3Dmol.js.
+
+(function () {
+  const data = window.__RELAXDIFF__;
+  if (!data) return;
+
+  const containerId = "viewer";
+  const viewer = $3Dmol.createViewer(containerId, { backgroundColor: "#050709" });
+
+  function addStructure(cif, opacity, hidden) {
+    const model = viewer.addModel(cif, "cif", { keepH: true });
+    model.setStyle({}, { stick: { radius: 0.12 }, sphere: { scale: 0.28, opacity: opacity } });
+    if (hidden) viewer.setStyle({ model: model }, { sphere: { hidden: true }, stick: { hidden: true } });
+    return model;
+  }
+
+  const beforeModel = addStructure(data.before_cif, 0.5, false);
+  const afterModel = addStructure(data.after_cif, 1.0, false);
+
+  function addArrows() {
+    const top = [...data.displacements]
+      .sort((a, b) => b.displacement - a.displacement)
+      .slice(0, Math.min(20, data.displacements.length));
+
+    // Pull start positions from the after model atoms in input order
+    const afterAtoms = afterModel.selectedAtoms({});
+    top.forEach((d) => {
+      if (d.displacement < 0.05) return;
+      const a = afterAtoms[d.index];
+      if (!a) return;
+      const end = { x: a.x, y: a.y, z: a.z };
+      const start = { x: a.x - d.vec[0], y: a.y - d.vec[1], z: a.z - d.vec[2] };
+      viewer.addArrow({
+        start: start,
+        end: end,
+        radius: 0.06,
+        radiusRatio: 2.0,
+        color: d.displacement > 1.0 ? "#f85149" : d.displacement > 0.3 ? "#d29922" : "#58a6ff",
+      });
+    });
+  }
+
+  function addUnitCell() {
+    viewer.addUnitCell(afterModel, { box: { color: "#3a4252" } });
+  }
+
+  addArrows();
+  addUnitCell();
+  viewer.zoomTo();
+  viewer.render();
+
+  // Toggle modes
+  const state = { mode: "both", arrows: true };
+
+  function setMode(mode) {
+    state.mode = mode;
+    if (mode === "before") {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+      viewer.setStyle({ model: afterModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+    } else if (mode === "after") {
+      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+    } else {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.10 }, sphere: { scale: 0.24, opacity: 0.45 } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.30 } });
+    }
+    viewer.render();
+  }
+
+  function toggleArrows() {
+    state.arrows = !state.arrows;
+    viewer.removeAllShapes();
+    if (state.arrows) addArrows();
+    addUnitCell();
+    viewer.render();
+  }
+
+  document.querySelectorAll("[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      setMode(btn.dataset.mode);
+    });
+  });
+
+  const arrowsBtn = document.getElementById("toggle-arrows");
+  if (arrowsBtn) {
+    arrowsBtn.addEventListener("click", () => {
+      arrowsBtn.classList.toggle("active");
+      toggleArrows();
+    });
+  }
+
+  // Default: both view + arrows
+  setMode("both");
+})();</script>
+
+</body>
+</html>

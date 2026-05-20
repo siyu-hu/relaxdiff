@@ -57,20 +57,21 @@ def compare_symmetry(
     after: Structure,
     symprec: Optional[float] = None,
 ) -> SymmetryDiff:
-    symprec = symprec or DEFAULT.thresholds.default_symprec
-    b = _snapshot(before, symprec)
-    a = _snapshot(after, symprec)
+    """Compare symmetry, picking an effective tolerance that absorbs rattle noise.
 
-    changed = b.space_group_number != a.space_group_number
-    if not changed:
-        direction = "same"
-    elif a.space_group_number < b.space_group_number:
-        direction = "broken"
-    else:
-        direction = "elevated"
+    Strategy:
+        1. Scan a range of symprec values on both structures.
+        2. Pick the smallest symprec where each structure is identified as
+           higher than P1.
+        3. Use max(those, requested floor) as the effective comparison
+           tolerance — this prevents tiny rattle from being mis-read as
+           symmetry breaking while still catching real distortions.
+    """
+    floor = symprec or DEFAULT.thresholds.default_symprec
+    scan_tols = sorted(DEFAULT.thresholds.symprec_scan)
 
     scan = []
-    for tol in DEFAULT.thresholds.symprec_scan:
+    for tol in scan_tols:
         sb = _snapshot(before, tol)
         sa = _snapshot(after, tol)
         scan.append({
@@ -81,6 +82,25 @@ def compare_symmetry(
             "after_symbol": sa.space_group_symbol,
             "changed": sb.space_group_number != sa.space_group_number,
         })
+
+    def _smallest_nontrivial(side: str) -> float:
+        for row in scan:
+            if row[f"{side}_sg"] > 1:
+                return row["symprec"]
+        return scan_tols[-1]
+
+    effective_tol = max(floor, _smallest_nontrivial("before"), _smallest_nontrivial("after"))
+
+    b = _snapshot(before, effective_tol)
+    a = _snapshot(after, effective_tol)
+
+    changed = b.space_group_number != a.space_group_number
+    if not changed:
+        direction = "same"
+    elif a.space_group_number < b.space_group_number:
+        direction = "broken"
+    else:
+        direction = "elevated"
 
     return SymmetryDiff(
         before=b,

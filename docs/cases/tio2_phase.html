@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RelaxDiff · TiO2 — large shear & atomic rattle</title>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <style>:root {
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #1b2027;
+  --border: #262c35;
+  --text: #e6e8eb;
+  --text-dim: #9aa3ad;
+  --accent: #5b8def;
+  --ok: #3fb950;
+  --info: #58a6ff;
+  --warn: #d29922;
+  --alert: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .title { font-size: 16px; font-weight: 600; }
+header .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+
+.severity-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.severity-ok    { background: rgba(63, 185, 80, 0.15);  color: var(--ok); }
+.severity-info  { background: rgba(88, 166, 255, 0.15); color: var(--info); }
+.severity-warn  { background: rgba(210, 153, 34, 0.18); color: var(--warn); }
+.severity-alert { background: rgba(248, 81, 73, 0.18);  color: var(--alert); }
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  padding: 20px 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.viewer-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viewer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-controls button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.viewer-controls button.active { background: var(--accent); border-color: var(--accent); color: white; }
+.viewer-controls button:hover { border-color: var(--accent); }
+
+#viewer {
+  width: 100%;
+  height: 520px;
+  background: #050709;
+  border-radius: 8px;
+  position: relative;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.narrative p { margin: 0 0 10px; }
+.narrative p:last-child { margin-bottom: 0; }
+
+.finding {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.finding:first-child { border-top: none; }
+.finding .pill {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 8px;
+}
+.finding .pill.ok    { background: var(--ok); }
+.finding .pill.info  { background: var(--info); }
+.finding .pill.warn  { background: var(--warn); }
+.finding .pill.alert { background: var(--alert); }
+.finding .body { flex: 1; }
+.finding .rule { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.finding .short { font-size: 13px; margin-top: 2px; }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.stat-label { color: var(--text-dim); font-size: 12px; }
+.stat-value { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+details {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+}
+details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+details[open] summary { margin-bottom: 10px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+table th, table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+table th { color: var(--text-dim); font-weight: 500; }
+
+footer {
+  padding: 20px 28px;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+footer a { color: var(--accent); text-decoration: none; }</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">RelaxDiff · TiO2 — large shear & atomic rattle</div>
+    <div class="subtitle">
+      TiO2 · 48 atoms ·
+      RMSD 0.318 Å ·
+      ΔV +6.0%
+    </div>
+  </div>
+  <div class="severity-chip severity-warn">
+    warn
+  </div>
+</header>
+
+<main>
+  <section class="viewer-card">
+    <div class="viewer-controls">
+      <button data-mode="before">Before</button>
+      <button data-mode="after">After</button>
+      <button data-mode="both" class="active">Overlay</button>
+      <button id="toggle-arrows" class="active">Displacement arrows</button>
+    </div>
+    <div id="viewer"></div>
+    <div style="color: var(--text-dim); font-size: 12px;">
+      Red arrows mark displacements &gt; 1.0 Å · Orange &gt; 0.3 Å · Blue smaller.
+      Before atoms are translucent in overlay mode.
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="card narrative">
+      <h3>Narrative</h3>
+      <p>This relaxation of TiO2 has notable changes worth a closer look. Overall RMSD is 0.318 Å across 48 atoms — the largest atomic displacement is 0.64 Å (atom 1, O); cell volume changed by +6.0%; space group went from P4_2/mnm to P1.</p>
+<p>Specifically: Largest displacement: 0.64 Å on atom 1 (O); Symmetry broken: P4_2/mnm → P1; 2 bond(s) broken; 7 atom(s) changed coordination number; 2 bond(s) broken.</p>
+<p>The symmetry change is the most informative signal here — worth checking whether it reflects a real distortion (e.g. Jahn-Teller, octahedral tilt, phase transition) or is an artifact of the starting configuration.</p>
+    </div>
+
+    <div class="card">
+      <h3>Findings (4)</h3>
+      
+      <div class="finding">
+        <div class="pill warn"></div>
+        <div class="body">
+          <div class="rule">large_displacement</div>
+          <div class="short">Largest displacement: 0.64 Å on atom 1 (O).</div>
+        </div>
+      </div>
+      
+      <div class="finding">
+        <div class="pill warn"></div>
+        <div class="body">
+          <div class="rule">symmetry_broken</div>
+          <div class="short">Symmetry broken: P4_2/mnm → P1.</div>
+        </div>
+      </div>
+      
+      <div class="finding">
+        <div class="pill warn"></div>
+        <div class="body">
+          <div class="rule">bond_breaking</div>
+          <div class="short">2 bond(s) broken.</div>
+        </div>
+      </div>
+      
+      <div class="finding">
+        <div class="pill warn"></div>
+        <div class="body">
+          <div class="rule">coordination_change</div>
+          <div class="short">7 atom(s) changed coordination number.</div>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="card">
+      <h3>Summary stats</h3>
+      <div class="stats">
+        <div class="stat-label">Max displacement</div>
+        <div class="stat-value">0.644 Å</div>
+        <div class="stat-label">RMSD</div>
+        <div class="stat-value">0.3184 Å</div>
+        <div class="stat-label">Volume Δ</div>
+        <div class="stat-value">+6.00%</div>
+        <div class="stat-label">Space group</div>
+        <div class="stat-value">P4_2/mnm → P1</div>
+        <div class="stat-label">Bonds broken</div>
+        <div class="stat-value">2</div>
+        <div class="stat-label">Bonds formed</div>
+        <div class="stat-value">0</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<details>
+  <summary>Per-atom displacement table</summary>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Element</th><th>Displacement (Å)</th><th>CN before</th><th>CN after</th><th>ΔCN</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>0</td>
+        <td>O</td>
+        <td>0.441</td>
+        <td>3</td>
+        <td>2</td>
+        <td>-1</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>O</td>
+        <td>0.644</td>
+        <td>3</td>
+        <td>1</td>
+        <td>-2</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>O</td>
+        <td>0.377</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>O</td>
+        <td>0.414</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>O</td>
+        <td>0.471</td>
+        <td>3</td>
+        <td>1</td>
+        <td>-2</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>O</td>
+        <td>0.246</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>O</td>
+        <td>0.324</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>7</td>
+        <td>O</td>
+        <td>0.274</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>8</td>
+        <td>O</td>
+        <td>0.543</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>O</td>
+        <td>0.267</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>O</td>
+        <td>0.171</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>O</td>
+        <td>0.490</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>12</td>
+        <td>O</td>
+        <td>0.120</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>13</td>
+        <td>O</td>
+        <td>0.346</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>14</td>
+        <td>O</td>
+        <td>0.148</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>15</td>
+        <td>O</td>
+        <td>0.239</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>16</td>
+        <td>O</td>
+        <td>0.518</td>
+        <td>3</td>
+        <td>1</td>
+        <td>-2</td>
+      </tr>
+      
+      <tr>
+        <td>17</td>
+        <td>O</td>
+        <td>0.240</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>18</td>
+        <td>O</td>
+        <td>0.397</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>19</td>
+        <td>O</td>
+        <td>0.164</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>20</td>
+        <td>O</td>
+        <td>0.326</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>21</td>
+        <td>O</td>
+        <td>0.156</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>22</td>
+        <td>O</td>
+        <td>0.262</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>23</td>
+        <td>O</td>
+        <td>0.208</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>24</td>
+        <td>O</td>
+        <td>0.286</td>
+        <td>3</td>
+        <td>2</td>
+        <td>-1</td>
+      </tr>
+      
+      <tr>
+        <td>25</td>
+        <td>O</td>
+        <td>0.345</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>26</td>
+        <td>O</td>
+        <td>0.215</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>27</td>
+        <td>O</td>
+        <td>0.422</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>28</td>
+        <td>O</td>
+        <td>0.253</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>29</td>
+        <td>O</td>
+        <td>0.368</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>30</td>
+        <td>O</td>
+        <td>0.276</td>
+        <td>3</td>
+        <td>3</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>31</td>
+        <td>O</td>
+        <td>0.311</td>
+        <td>3</td>
+        <td>2</td>
+        <td>-1</td>
+      </tr>
+      
+      <tr>
+        <td>32</td>
+        <td>Ti</td>
+        <td>0.335</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>33</td>
+        <td>Ti</td>
+        <td>0.277</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>34</td>
+        <td>Ti</td>
+        <td>0.386</td>
+        <td>6</td>
+        <td>4</td>
+        <td>-2</td>
+      </tr>
+      
+      <tr>
+        <td>35</td>
+        <td>Ti</td>
+        <td>0.222</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>36</td>
+        <td>Ti</td>
+        <td>0.198</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>37</td>
+        <td>Ti</td>
+        <td>0.103</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>38</td>
+        <td>Ti</td>
+        <td>0.382</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>39</td>
+        <td>Ti</td>
+        <td>0.227</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>40</td>
+        <td>Ti</td>
+        <td>0.201</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>41</td>
+        <td>Ti</td>
+        <td>0.226</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>42</td>
+        <td>Ti</td>
+        <td>0.346</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>43</td>
+        <td>Ti</td>
+        <td>0.135</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>44</td>
+        <td>Ti</td>
+        <td>0.248</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>45</td>
+        <td>Ti</td>
+        <td>0.224</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>46</td>
+        <td>Ti</td>
+        <td>0.318</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>47</td>
+        <td>Ti</td>
+        <td>0.092</td>
+        <td>6</td>
+        <td>6</td>
+        <td>—</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</details>
+
+<details>
+  <summary>Bond changes (40)</summary>
+  
+  <table>
+    <thead>
+      <tr><th>i</th><th>j</th><th>Pair</th><th>Before (Å)</th><th>After (Å)</th><th>Δ (Å)</th><th>Kind</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>0</td>
+        <td>32</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.585</td>
+        <td>-0.361</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>0</td>
+        <td>39</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.636</td>
+        <td>+0.653</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>0</td>
+        <td>46</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.368</td>
+        <td>-0.579</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>35</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.366</td>
+        <td>+0.420</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>39</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.364</td>
+        <td>+0.380</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>47</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.462</td>
+        <td>-0.485</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>33</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>1.524</td>
+        <td>-0.460</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>41</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.475</td>
+        <td>+0.529</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>40</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.523</td>
+        <td>-0.424</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>40</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.336</td>
+        <td>+0.389</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>42</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.404</td>
+        <td>+0.420</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>44</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.585</td>
+        <td>-0.361</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>32</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.598</td>
+        <td>+0.651</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>46</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.310</td>
+        <td>+0.363</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>35</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.476</td>
+        <td>+0.529</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>7</td>
+        <td>44</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.323</td>
+        <td>+0.377</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>8</td>
+        <td>39</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.458</td>
+        <td>+0.511</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>40</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.312</td>
+        <td>+0.365</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>35</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.313</td>
+        <td>+0.366</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>33</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.549</td>
+        <td>-0.398</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>36</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.369</td>
+        <td>+0.422</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>12</td>
+        <td>36</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.284</td>
+        <td>+0.337</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>14</td>
+        <td>37</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.296</td>
+        <td>+0.349</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>15</td>
+        <td>33</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.282</td>
+        <td>+0.336</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>16</td>
+        <td>33</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.346</td>
+        <td>+0.399</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>16</td>
+        <td>35</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>1.255</td>
+        <td>-0.729</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>16</td>
+        <td>36</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.686</td>
+        <td>+0.740</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>19</td>
+        <td>42</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.470</td>
+        <td>+0.523</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>20</td>
+        <td>32</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.381</td>
+        <td>+0.398</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>20</td>
+        <td>38</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.421</td>
+        <td>+0.475</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>21</td>
+        <td>32</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.262</td>
+        <td>+0.315</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>23</td>
+        <td>45</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.449</td>
+        <td>+0.466</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>24</td>
+        <td>34</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>—</td>
+        <td>—</td>
+        <td>broken</td>
+      </tr>
+      
+      <tr>
+        <td>25</td>
+        <td>38</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>1.380</td>
+        <td>-0.566</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>25</td>
+        <td>47</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>2.292</td>
+        <td>+0.308</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>26</td>
+        <td>42</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>1.583</td>
+        <td>-0.400</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>28</td>
+        <td>42</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.333</td>
+        <td>+0.386</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>29</td>
+        <td>41</td>
+        <td>O–Ti</td>
+        <td>1.947</td>
+        <td>2.381</td>
+        <td>+0.434</td>
+        <td>stretched</td>
+      </tr>
+      
+      <tr>
+        <td>30</td>
+        <td>46</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>1.571</td>
+        <td>-0.412</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>31</td>
+        <td>34</td>
+        <td>O–Ti</td>
+        <td>1.984</td>
+        <td>—</td>
+        <td>—</td>
+        <td>broken</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+</details>
+
+<footer>
+  Generated by <a href="https://github.com/zoe/relaxdiff">RelaxDiff</a>.
+  Drop two structures, get a sanity check.
+</footer>
+
+<script id="relaxdiff-payload" type="application/json">{"title": "RelaxDiff \u00b7 TiO2 \u2014 large shear & atomic rattle", "narrative_html": "<p>This relaxation of TiO2 has notable changes worth a closer look. Overall RMSD is 0.318 \u00c5 across 48 atoms \u2014 the largest atomic displacement is 0.64 \u00c5 (atom 1, O); cell volume changed by +6.0%; space group went from P4_2/mnm to P1.</p>\n<p>Specifically: Largest displacement: 0.64 \u00c5 on atom 1 (O); Symmetry broken: P4_2/mnm \u2192 P1; 2 bond(s) broken; 7 atom(s) changed coordination number; 2 bond(s) broken.</p>\n<p>The symmetry change is the most informative signal here \u2014 worth checking whether it reflects a real distortion (e.g. Jahn-Teller, octahedral tilt, phase transition) or is an artifact of the starting configuration.</p>", "diagnosis": {"findings": [{"rule": "large_displacement", "severity": "warn", "short": "Largest displacement: 0.64 \u00c5 on atom 1 (O).", "magnitude": 0.6441412796231147, "atoms_involved": [1], "detail": {"z_score": 2.932745578163944, "mean_displacement": 0.29537277757289554}}, {"rule": "symmetry_broken", "severity": "warn", "short": "Symmetry broken: P4_2/mnm \u2192 P1.", "magnitude": 135.0, "atoms_involved": [], "detail": {"before": {"space_group_number": 136, "space_group_symbol": "P4_2/mnm", "point_group": "4/mmm", "crystal_system": "tetragonal", "n_symmetry_ops": 128, "symprec": 0.2}, "after": {"space_group_number": 1, "space_group_symbol": "P1", "point_group": "1", "crystal_system": "triclinic", "n_symmetry_ops": 1, "symprec": 0.2}}}, {"rule": "bond_breaking", "severity": "warn", "short": "2 bond(s) broken.", "magnitude": 2.0, "atoms_involved": [24, 31, 34], "detail": {"bonds": [{"i": 24, "j": 34, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205364, "length_after": null, "delta": null, "kind": "broken"}, {"i": 31, "j": 34, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219718, "length_after": null, "delta": null, "kind": "broken"}]}}, {"rule": "coordination_change", "severity": "warn", "short": "7 atom(s) changed coordination number.", "magnitude": 7.0, "atoms_involved": [0, 1, 4, 16, 24, 31, 34], "detail": {"atoms": [{"index": 0, "element": "O", "displacement": 0.4406648615543391, "displacement_vec": [-0.2246199552566102, -0.3540466323897077, 0.1355816285590732], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 1, "element": "O", "displacement": 0.6441412796231147, "displacement_vec": [-0.003808822966867383, 0.15228421158123112, 0.625869794673935], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 4, "element": "O", "displacement": 0.4707176299977188, "displacement_vec": [-0.008649829709486965, -0.25817890278680145, 0.39350212425407505], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 16, "element": "O", "displacement": 0.5178364930063868, "displacement_vec": [0.3640134998801848, 0.14133837289289305, 0.3401062624270861], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 24, "element": "O", "displacement": 0.2856970915933889, "displacement_vec": [-0.17378087738375564, -0.03473275048485697, 0.2240907647459172], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 31, "element": "O", "displacement": 0.310655264631307, "displacement_vec": [-0.22510373866534636, 0.21408114457216754, 0.002064902104585035], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 34, "element": "Ti", "displacement": 0.3856395729882782, "displacement_vec": [0.1537758130811121, -0.17827173400918556, -0.30543422928542674], "cn_before": 6, "cn_after": 4, "cn_change": -2}]}}], "overall_severity": "warn", "summary_stats": {"max_displacement": 0.6441412796231147, "rmsd": 0.31841413755172115, "volume_change_frac": 0.05999999999999998, "space_group_before": 136, "space_group_after": 1, "bonds_broken": 2, "bonds_formed": 0, "n_atoms_moved_over_0p5A": 3}}, "geometry": {"per_atom": [{"index": 0, "element": "O", "displacement": 0.4406648615543391, "displacement_vec": [-0.2246199552566102, -0.3540466323897077, 0.1355816285590732], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 1, "element": "O", "displacement": 0.6441412796231147, "displacement_vec": [-0.003808822966867383, 0.15228421158123112, 0.625869794673935], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 2, "element": "O", "displacement": 0.3770297415879612, "displacement_vec": [0.11436221945092896, -0.18863733430608418, 0.30575916161259503], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 3, "element": "O", "displacement": 0.41384447062291607, "displacement_vec": [0.020084609451286973, -0.2343279593120663, -0.34052057472786207], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 4, "element": "O", "displacement": 0.4707176299977188, "displacement_vec": [-0.008649829709486965, -0.25817890278680145, 0.39350212425407505], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 5, "element": "O", "displacement": 0.2457245917544454, "displacement_vec": [0.06284071127205543, -0.05649351237663406, -0.2307381699222348], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 6, "element": "O", "displacement": 0.3244434679470906, "displacement_vec": [-0.20874036379448374, 0.14073473740837802, -0.20465766074856875], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 7, "element": "O", "displacement": 0.27430315405283007, "displacement_vec": [0.03396113833259901, -0.15990459140019597, 0.22027115802033878], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 8, "element": "O", "displacement": 0.5427483990954082, "displacement_vec": [0.09712678123380414, 0.26721905879941416, -0.4623161123107699], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 9, "element": "O", "displacement": 0.26678723468806326, "displacement_vec": [-0.104133501518879, 0.12877142903785682, -0.20916395845716249], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 10, "element": "O", "displacement": 0.17141057844161894, "displacement_vec": [0.09675777009174644, 0.1389773018075298, 0.02654863293772239], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 11, "element": "O", "displacement": 0.4904252998879989, "displacement_vec": [-0.05784078449762367, 0.30024921706966007, -0.3834342526013935], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 12, "element": "O", "displacement": 0.11993844146232445, "displacement_vec": [-0.02291457564976297, 0.057359522392969715, -0.10281068599155015], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 13, "element": "O", "displacement": 0.3458941529016916, "displacement_vec": [0.09447721148559554, 0.03220378545011477, -0.331179313551085], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 14, "element": "O", "displacement": 0.14837368476384089, "displacement_vec": [0.08376479213643039, 0.04570090757964301, -0.1136205834131174], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 15, "element": "O", "displacement": 0.23892749351979622, "displacement_vec": [-0.1668732941971421, -0.16190848349368483, -0.05500267099170291], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 16, "element": "O", "displacement": 0.5178364930063868, "displacement_vec": [0.3640134998801848, 0.14133837289289305, 0.3401062624270861], "cn_before": 3, "cn_after": 1, "cn_change": -2}, {"index": 17, "element": "O", "displacement": 0.24002642982628475, "displacement_vec": [0.1961861420411923, 0.07486875064033452, 0.11626846031362471], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 18, "element": "O", "displacement": 0.39684711777862236, "displacement_vec": [-0.12549580290310672, -0.3184474472965824, 0.20082246301944098], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 19, "element": "O", "displacement": 0.16383981023493277, "displacement_vec": [-0.05518571041282532, 0.13016060250748027, -0.08280240539344427], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 20, "element": "O", "displacement": 0.3256766985359173, "displacement_vec": [-0.2261802918156199, 0.10136427634866993, -0.2112654042756794], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 21, "element": "O", "displacement": 0.15563642341803374, "displacement_vec": [0.15476824577115247, -0.013944953941485056, -0.008661677369163595], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 22, "element": "O", "displacement": 0.2619716844942965, "displacement_vec": [-0.11391255152403276, 0.07894832606754583, 0.22230667082477815], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 23, "element": "O", "displacement": 0.20763098948147152, "displacement_vec": [-0.16879878116803013, -0.0078086231448908855, -0.12065083784965397], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 24, "element": "O", "displacement": 0.2856970915933889, "displacement_vec": [-0.17378087738375564, -0.03473275048485697, 0.2240907647459172], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 25, "element": "O", "displacement": 0.3446385976436791, "displacement_vec": [0.1712846459879042, 0.2471280154337527, -0.1684193487173459], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 26, "element": "O", "displacement": 0.21487952612284414, "displacement_vec": [0.07042569609119183, -0.07599491353616514, 0.18825037899956518], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 27, "element": "O", "displacement": 0.4215101849886641, "displacement_vec": [0.3473288959743072, -0.19620440919234866, -0.13615176783254826], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 28, "element": "O", "displacement": 0.2527745196854775, "displacement_vec": [-0.03356397487936102, -0.07099512155893418, -0.24026674781865595], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 29, "element": "O", "displacement": 0.36816842201844424, "displacement_vec": [0.2631706400049121, -0.13955966467304368, 0.216361505835266], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 30, "element": "O", "displacement": 0.2759613446932687, "displacement_vec": [0.12737427727117048, 0.11365472123765002, -0.21682495611657834], "cn_before": 3, "cn_after": 3, "cn_change": 0}, {"index": 31, "element": "O", "displacement": 0.310655264631307, "displacement_vec": [-0.22510373866534636, 0.21408114457216754, 0.002064902104585035], "cn_before": 3, "cn_after": 2, "cn_change": -1}, {"index": 32, "element": "Ti", "displacement": 0.334689773519426, "displacement_vec": [0.04821092156883749, 0.058390818331043676, 0.3260114474594399], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 33, "element": "Ti", "displacement": 0.2768327036086067, "displacement_vec": [-0.10031093876429238, 0.1959128673126527, 0.16790535957143238], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 34, "element": "Ti", "displacement": 0.3856395729882782, "displacement_vec": [0.1537758130811121, -0.17827173400918556, -0.30543422928542674], "cn_before": 6, "cn_after": 4, "cn_change": -2}, {"index": 35, "element": "Ti", "displacement": 0.22200726235714846, "displacement_vec": [-0.18561729562352058, -0.11388295745822856, 0.0431754108873745], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 36, "element": "Ti", "displacement": 0.1983232146810183, "displacement_vec": [-0.16769703495084945, 0.027855970826449163, 0.10214620325505429], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 37, "element": "Ti", "displacement": 0.10285231750966106, "displacement_vec": [-0.02638214778982849, -0.06258222036059764, 0.07724019154456686], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 38, "element": "Ti", "displacement": 0.3818207106398474, "displacement_vec": [-0.1352819626396983, -0.05192868149999502, 0.3532552302451323], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 39, "element": "Ti", "displacement": 0.22670208865449232, "displacement_vec": [-0.14532907884822538, 0.03862872380813788, -0.169649985376923], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 40, "element": "Ti", "displacement": 0.20130109728254303, "displacement_vec": [-0.12195538154131609, 0.04593476384974646, 0.15342429452448492], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 41, "element": "Ti", "displacement": 0.22624391679912628, "displacement_vec": [0.04487454928003271, -0.14194317430362724, -0.17036642857128273], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 42, "element": "Ti", "displacement": 0.3463226874565486, "displacement_vec": [0.3134746115362251, -0.11308877954620158, 0.09425497180568064], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 43, "element": "Ti", "displacement": 0.13477859267597947, "displacement_vec": [-0.033423142198971925, 0.07906875684482609, 0.10390521786839513], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 44, "element": "Ti", "displacement": 0.24758566491002823, "displacement_vec": [-0.0273796872638906, -0.10581610024091313, -0.22215302636713585], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 45, "element": "Ti", "displacement": 0.22364458177338012, "displacement_vec": [0.20096943442725343, -0.027768344770932353, -0.0941121905560731], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 46, "element": "Ti", "displacement": 0.31776948782534703, "displacement_vec": [-0.1306015363963648, 0.2620889600588836, -0.12341014179938892], "cn_before": 6, "cn_after": 6, "cn_change": 0}, {"index": 47, "element": "Ti", "displacement": 0.0922545707633773, "displacement_vec": [-0.06565154401002847, -0.006457949775855349, 0.06449089455517588], "cn_before": 6, "cn_after": 6, "cn_change": 0}], "bond_changes": [{"i": 0, "j": 32, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 1.5853318726045287, "delta": -0.3612056418160081, "kind": "compressed"}, {"i": 0, "j": 39, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219714, "length_after": 2.6362763896595722, "delta": 0.6527737033376009, "kind": "stretched"}, {"i": 0, "j": 46, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205364, "length_after": 1.3676894925042247, "delta": -0.5788480219163117, "kind": "compressed"}, {"i": 1, "j": 35, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.3663072373477654, "delta": 0.4197697229272286, "kind": "stretched"}, {"i": 1, "j": 39, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219727, "length_after": 2.363917408994846, "delta": 0.38041472267287313, "kind": "stretched"}, {"i": 1, "j": 47, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 1.4619451765606881, "delta": -0.48459233785984845, "kind": "compressed"}, {"i": 2, "j": 33, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219722, "length_after": 1.5235693243437185, "delta": -0.45993336197825374, "kind": "compressed"}, {"i": 2, "j": 41, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.475425021946578, "delta": 0.5288875075260411, "kind": "stretched"}, {"i": 3, "j": 40, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205357, "length_after": 1.5227097035412387, "delta": -0.423827810879297, "kind": "compressed"}, {"i": 4, "j": 40, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.335909974993078, "delta": 0.38937246057254127, "kind": "stretched"}, {"i": 4, "j": 42, "element_i": "O", "element_j": "Ti", "length_before": 1.983502686321973, "length_after": 2.4035035793828134, "delta": 0.42000089306084054, "kind": "stretched"}, {"i": 4, "j": 44, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 1.5852746290185005, "delta": -0.3612628854020363, "kind": "compressed"}, {"i": 5, "j": 32, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.5978481357075642, "delta": 0.6513106212870277, "kind": "stretched"}, {"i": 5, "j": 46, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.309516324343101, "delta": 0.3629788099225646, "kind": "stretched"}, {"i": 6, "j": 35, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.4759205449214177, "delta": 0.5293830305008811, "kind": "stretched"}, {"i": 7, "j": 44, "element_i": "O", "element_j": "Ti", "length_before": 1.946537514420536, "length_after": 2.3231770965541747, "delta": 0.3766395821336388, "kind": "stretched"}, {"i": 8, "j": 39, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.457804857532408, "delta": 0.5112673431118713, "kind": "stretched"}, {"i": 9, "j": 40, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.311726995806855, "delta": 0.3651894813863181, "kind": "stretched"}, {"i": 10, "j": 35, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.3129862022704413, "delta": 0.3664486878499045, "kind": "stretched"}, {"i": 11, "j": 33, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205352, "length_after": 1.5488950219899853, "delta": -0.39764249243054994, "kind": "compressed"}, {"i": 11, "j": 36, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205352, "length_after": 2.368595144917222, "delta": 0.42205763049668654, "kind": "stretched"}, {"i": 12, "j": 36, "element_i": "O", "element_j": "Ti", "length_before": 1.946537514420537, "length_after": 2.283791641514787, "delta": 0.33725412709424996, "kind": "stretched"}, {"i": 14, "j": 37, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.2958990620941453, "delta": 0.3493615476736087, "kind": "stretched"}, {"i": 15, "j": 33, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205355, "length_after": 2.282211327019035, "delta": 0.3356738125984997, "kind": "stretched"}, {"i": 16, "j": 33, "element_i": "O", "element_j": "Ti", "length_before": 1.946537514420537, "length_after": 2.3457324671128297, "delta": 0.39919495269229266, "kind": "stretched"}, {"i": 16, "j": 35, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219736, "length_after": 1.2548481486858951, "delta": -0.7286545376360785, "kind": "compressed"}, {"i": 16, "j": 36, "element_i": "O", "element_j": "Ti", "length_before": 1.946537514420537, "length_after": 2.6860823523200317, "delta": 0.7395448378994947, "kind": "stretched"}, {"i": 19, "j": 42, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205364, "length_after": 2.469537733857248, "delta": 0.5230002194367118, "kind": "stretched"}, {"i": 20, "j": 32, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219722, "length_after": 2.381149398503749, "delta": 0.3976467121817766, "kind": "stretched"}, {"i": 20, "j": 38, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.421141392500899, "delta": 0.4746038780803621, "kind": "stretched"}, {"i": 21, "j": 32, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.2619632503712204, "delta": 0.3154257359506838, "kind": "stretched"}, {"i": 23, "j": 45, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219727, "length_after": 2.44945378968093, "delta": 0.4659511033589574, "kind": "stretched"}, {"i": 24, "j": 34, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205364, "length_after": null, "delta": null, "kind": "broken"}, {"i": 25, "j": 38, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205361, "length_after": 1.3804026896766017, "delta": -0.5661348247439344, "kind": "compressed"}, {"i": 25, "j": 47, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219725, "length_after": 2.2916134804704473, "delta": 0.30811079414847486, "kind": "stretched"}, {"i": 26, "j": 42, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219722, "length_after": 1.5833792483674398, "delta": -0.4001234379545324, "kind": "compressed"}, {"i": 28, "j": 42, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205366, "length_after": 2.3326086690556056, "delta": 0.386071154635069, "kind": "stretched"}, {"i": 29, "j": 41, "element_i": "O", "element_j": "Ti", "length_before": 1.9465375144205368, "length_after": 2.3807304219985217, "delta": 0.4341929075779849, "kind": "stretched"}, {"i": 30, "j": 46, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219722, "length_after": 1.5713010636314577, "delta": -0.4122016226905145, "kind": "compressed"}, {"i": 31, "j": 34, "element_i": "O", "element_j": "Ti", "length_before": 1.9835026863219718, "length_after": null, "delta": null, "kind": "broken"}], "cell": {"a_before": 9.188, "a_after": 9.204446968721152, "b_before": 9.188, "b_after": 9.188, "c_before": 5.918, "c_after": 6.27308, "alpha_before": 90.0, "alpha_after": 90.0, "beta_before": 90.0, "beta_after": 90.0, "gamma_before": 90.0, "gamma_after": 93.4256769303601, "volume_before": 499.59367779200005, "volume_after": 529.56929845952, "volume_change_frac": 0.05999999999999998}, "strain": [[0.0013432369810988387, -0.029916946744871276, 0.0], [-0.02991694674487127, -0.0004476120295320296, 0.0], [0.0, 0.0, 0.06000000000000005]], "rotation": [[-0.02991694674487146, 0.999552387970468, 0.0], [-0.9995523879704681, -0.029916946744871244, 0.0], [0.0, 0.0, 1.0]], "rmsd": 0.31841413755172115, "max_displacement": 0.6441412796231147, "max_displacement_index": 1, "formula": "TiO2", "n_atoms": 48}, "symmetry": {"before": {"space_group_number": 136, "space_group_symbol": "P4_2/mnm", "point_group": "4/mmm", "crystal_system": "tetragonal", "n_symmetry_ops": 128, "symprec": 0.2}, "after": {"space_group_number": 1, "space_group_symbol": "P1", "point_group": "1", "crystal_system": "triclinic", "n_symmetry_ops": 1, "symprec": 0.2}, "space_group_changed": true, "direction": "broken", "tolerance_scan": [{"symprec": 0.001, "before_sg": 136, "after_sg": 1, "before_symbol": "P4_2/mnm", "after_symbol": "P1", "changed": true}, {"symprec": 0.01, "before_sg": 136, "after_sg": 1, "before_symbol": "P4_2/mnm", "after_symbol": "P1", "changed": true}, {"symprec": 0.05, "before_sg": 136, "after_sg": 1, "before_symbol": "P4_2/mnm", "after_symbol": "P1", "changed": true}, {"symprec": 0.1, "before_sg": 136, "after_sg": 1, "before_symbol": "P4_2/mnm", "after_symbol": "P1", "changed": true}, {"symprec": 0.2, "before_sg": 136, "after_sg": 1, "before_symbol": "P4_2/mnm", "after_symbol": "P1", "changed": true}]}, "before_cif": "# generated using pymatgen\ndata_TiO2\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   9.18800000\n_cell_length_b   9.18800000\n_cell_length_c   5.91800000\n_cell_angle_alpha   90.00000000\n_cell_angle_beta   90.00000000\n_cell_angle_gamma   90.00000000\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   TiO2\n_chemical_formula_sum   'Ti16 O32'\n_cell_volume   499.59367779\n_cell_formula_units_Z   16\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  O  O0  1  0.40265000  0.59735000  0.75000000  1\n  O  O1  1  0.09735000  0.90265000  0.75000000  1\n  O  O2  1  0.59735000  0.90265000  0.75000000  1\n  O  O3  1  0.65265000  0.15265000  0.00000000  1\n  O  O4  1  0.84735000  0.34735000  0.00000000  1\n  O  O5  1  0.59735000  0.40265000  0.25000000  1\n  O  O6  1  0.90265000  0.09735000  0.25000000  1\n  O  O7  1  0.65265000  0.15265000  0.50000000  1\n  O  O8  1  0.34735000  0.84735000  0.50000000  1\n  O  O9  1  0.84735000  0.34735000  0.50000000  1\n  O  O10  1  0.90265000  0.09735000  0.75000000  1\n  O  O11  1  0.65265000  0.65265000  0.00000000  1\n  O  O12  1  0.84735000  0.84735000  0.00000000  1\n  O  O13  1  0.59735000  0.90265000  0.25000000  1\n  O  O14  1  0.90265000  0.59735000  0.25000000  1\n  O  O15  1  0.65265000  0.65265000  0.50000000  1\n  O  O16  1  0.84735000  0.84735000  0.50000000  1\n  O  O17  1  0.59735000  0.40265000  0.75000000  1\n  O  O18  1  0.15265000  0.65265000  0.50000000  1\n  O  O19  1  0.90265000  0.59735000  0.75000000  1\n  O  O20  1  0.34735000  0.34735000  0.50000000  1\n  O  O21  1  0.40265000  0.59735000  0.25000000  1\n  O  O22  1  0.09735000  0.90265000  0.25000000  1\n  O  O23  1  0.34735000  0.84735000  0.00000000  1\n  O  O24  1  0.15265000  0.15265000  0.50000000  1\n  O  O25  1  0.15265000  0.15265000  0.00000000  1\n  O  O26  1  0.15265000  0.65265000  0.00000000  1\n  O  O27  1  0.40265000  0.09735000  0.25000000  1\n  O  O28  1  0.09735000  0.40265000  0.75000000  1\n  O  O29  1  0.40265000  0.09735000  0.75000000  1\n  O  O30  1  0.34735000  0.34735000  0.00000000  1\n  O  O31  1  0.09735000  0.40265000  0.25000000  1\n  Ti  Ti32  1  0.50000000  0.50000000  0.50000000  1\n  Ti  Ti33  1  0.75000000  0.75000000  0.75000000  1\n  Ti  Ti34  1  0.25000000  0.25000000  0.25000000  1\n  Ti  Ti35  1  0.00000000  0.00000000  0.50000000  1\n  Ti  Ti36  1  0.75000000  0.75000000  0.25000000  1\n  Ti  Ti37  1  0.00000000  0.50000000  0.50000000  1\n  Ti  Ti38  1  0.25000000  0.25000000  0.75000000  1\n  Ti  Ti39  1  0.25000000  0.75000000  0.75000000  1\n  Ti  Ti40  1  0.75000000  0.25000000  0.75000000  1\n  Ti  Ti41  1  0.50000000  0.00000000  0.50000000  1\n  Ti  Ti42  1  0.00000000  0.50000000  0.00000000  1\n  Ti  Ti43  1  0.25000000  0.75000000  0.25000000  1\n  Ti  Ti44  1  0.75000000  0.25000000  0.25000000  1\n  Ti  Ti45  1  0.50000000  0.00000000  0.00000000  1\n  Ti  Ti46  1  0.50000000  0.50000000  0.00000000  1\n  Ti  Ti47  1  0.00000000  0.00000000  0.00000000  1\n", "after_cif": "# generated using pymatgen\ndata_TiO2\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   9.20444697\n_cell_length_b   9.18800000\n_cell_length_c   6.27308000\n_cell_angle_alpha   90.00000000\n_cell_angle_beta   90.00000000\n_cell_angle_gamma   93.42567693\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   TiO2\n_chemical_formula_sum   'Ti16 O32'\n_cell_volume   529.56929846\n_cell_formula_units_Z   16\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  O  O_9  1  0.41717111  0.53480393  0.77224276  1\n  O  O_8  1  0.07983704  0.91828554  0.85267668  1\n  O  O_16  1  0.63134524  0.89558356  0.80016113  1\n  O  O_20  1  0.68119399  0.13018660  -0.05586389  1\n  O  O_29  1  0.87534608  0.31914693  0.06455574  1\n  O  O_27  1  0.61073878  0.40374154  0.21214639  1\n  O  O_5  1  0.86344041  0.08877487  0.21642502  1\n  O  O_15  1  0.67440090  0.13959363  0.53613645  1\n  O  O_14  1  0.32826638  0.88643335  0.42415502  1\n  O  O_32  1  0.82121908  0.34924943  0.46568574  1\n  O  O_10  1  0.89791315  0.12286507  0.75435542  1\n  O  O_1  1  0.61247385  0.67783067  -0.06290407  1\n  O  O_18  1  0.83834359  0.85082934  -0.01686654  1\n  O  O_12  1  0.60433681  0.91664678  0.19566858  1\n  O  O_31  1  0.90692060  0.61156856  0.23136005  1\n  O  O_22  1  0.65209297  0.61684950  0.49097657  1\n  O  O_6  1  0.87233318  0.90309905  0.55579592  1\n  O  O_19  1  0.61096129  0.43255836  0.76907435  1\n  O  O_28  1  0.17429834  0.60498022  0.53294580  1\n  O  O_21  1  0.88185495  0.60488769  0.73641590  1\n  O  O_23  1  0.31060092  0.33266541  0.46534099  1\n  O  O_24  1  0.42157889  0.61324342  0.24857901  1\n  O  O_4  1  0.07571184  0.89819694  0.28647038  1\n  O  O_3  1  0.32928760  0.82758786  -0.01979330  1\n  O  O_7  1  0.13704940  0.12948894  0.53676307  1\n  O  O_11  1  0.14414070  0.19793435  -0.02762993  1\n  O  O_30  1  0.16907776  0.65253555  0.03088330  1\n  O  O_13  1  0.46363208  0.11562324  0.22766371  1\n  O  O_25  1  0.10154961  0.39139573  0.71058319  1\n  O  O_17  1  0.44783460  0.11215591  0.78549505  1\n  O  O_2  1  0.34888927  0.37362909  -0.03557108  1\n  O  O_26  1  0.04807536  0.39997552  0.25033876  1\n  Ti  Ti_12  1  0.49885786  0.51156809  0.55348360  1\n  Ti  Ti_1  1  0.71676497  0.75941035  0.77754561  1\n  Ti  Ti_16  1  0.28725430  0.24844896  0.19989218  1\n  Ti  Ti_13  1  -0.00804828  -0.03283778  0.50708312  1\n  Ti  Ti_15  1  0.72805980  0.73412335  0.26675753  1\n  Ti  Ti_3  1  0.00406149  0.49043889  0.51267159  1\n  Ti  Ti_4  1  0.24064812  0.22934454  0.80795307  1\n  Ti  Ti_10  1  0.22936073  0.73776925  0.72216818  1\n  Ti  Ti_6  1  0.73116345  0.24116231  0.77516993  1\n  Ti  Ti_5  1  0.52096014  -0.00993737  0.47205064  1\n  Ti  Ti_7  1  0.04785857  0.52324194  0.01546294  1\n  Ti  Ti_14  1  0.23737890  0.75459021  0.26704611  1\n  Ti  Ti_11  1  0.75880023  0.23576668  0.21355482  1\n  Ti  Ti_2  1  0.52566339  0.01961891  -0.01543952  1\n  Ti  Ti_8  1  0.45594183  0.51299210  -0.02024597  1\n  Ti  Ti_9  1  -0.00664126  -0.00804700  0.01058001  1\n", "displacements": [{"index": 0, "element": "O", "displacement": 0.4406648615543391, "vec": [-0.2246199552566102, -0.3540466323897077, 0.1355816285590732], "cn_before": 3, "cn_after": 2}, {"index": 1, "element": "O", "displacement": 0.6441412796231147, "vec": [-0.003808822966867383, 0.15228421158123112, 0.625869794673935], "cn_before": 3, "cn_after": 1}, {"index": 2, "element": "O", "displacement": 0.3770297415879612, "vec": [0.11436221945092896, -0.18863733430608418, 0.30575916161259503], "cn_before": 3, "cn_after": 3}, {"index": 3, "element": "O", "displacement": 0.41384447062291607, "vec": [0.020084609451286973, -0.2343279593120663, -0.34052057472786207], "cn_before": 3, "cn_after": 3}, {"index": 4, "element": "O", "displacement": 0.4707176299977188, "vec": [-0.008649829709486965, -0.25817890278680145, 0.39350212425407505], "cn_before": 3, "cn_after": 1}, {"index": 5, "element": "O", "displacement": 0.2457245917544454, "vec": [0.06284071127205543, -0.05649351237663406, -0.2307381699222348], "cn_before": 3, "cn_after": 3}, {"index": 6, "element": "O", "displacement": 0.3244434679470906, "vec": [-0.20874036379448374, 0.14073473740837802, -0.20465766074856875], "cn_before": 3, "cn_after": 3}, {"index": 7, "element": "O", "displacement": 0.27430315405283007, "vec": [0.03396113833259901, -0.15990459140019597, 0.22027115802033878], "cn_before": 3, "cn_after": 3}, {"index": 8, "element": "O", "displacement": 0.5427483990954082, "vec": [0.09712678123380414, 0.26721905879941416, -0.4623161123107699], "cn_before": 3, "cn_after": 3}, {"index": 9, "element": "O", "displacement": 0.26678723468806326, "vec": [-0.104133501518879, 0.12877142903785682, -0.20916395845716249], "cn_before": 3, "cn_after": 3}, {"index": 10, "element": "O", "displacement": 0.17141057844161894, "vec": [0.09675777009174644, 0.1389773018075298, 0.02654863293772239], "cn_before": 3, "cn_after": 3}, {"index": 11, "element": "O", "displacement": 0.4904252998879989, "vec": [-0.05784078449762367, 0.30024921706966007, -0.3834342526013935], "cn_before": 3, "cn_after": 3}, {"index": 12, "element": "O", "displacement": 0.11993844146232445, "vec": [-0.02291457564976297, 0.057359522392969715, -0.10281068599155015], "cn_before": 3, "cn_after": 3}, {"index": 13, "element": "O", "displacement": 0.3458941529016916, "vec": [0.09447721148559554, 0.03220378545011477, -0.331179313551085], "cn_before": 3, "cn_after": 3}, {"index": 14, "element": "O", "displacement": 0.14837368476384089, "vec": [0.08376479213643039, 0.04570090757964301, -0.1136205834131174], "cn_before": 3, "cn_after": 3}, {"index": 15, "element": "O", "displacement": 0.23892749351979622, "vec": [-0.1668732941971421, -0.16190848349368483, -0.05500267099170291], "cn_before": 3, "cn_after": 3}, {"index": 16, "element": "O", "displacement": 0.5178364930063868, "vec": [0.3640134998801848, 0.14133837289289305, 0.3401062624270861], "cn_before": 3, "cn_after": 1}, {"index": 17, "element": "O", "displacement": 0.24002642982628475, "vec": [0.1961861420411923, 0.07486875064033452, 0.11626846031362471], "cn_before": 3, "cn_after": 3}, {"index": 18, "element": "O", "displacement": 0.39684711777862236, "vec": [-0.12549580290310672, -0.3184474472965824, 0.20082246301944098], "cn_before": 3, "cn_after": 3}, {"index": 19, "element": "O", "displacement": 0.16383981023493277, "vec": [-0.05518571041282532, 0.13016060250748027, -0.08280240539344427], "cn_before": 3, "cn_after": 3}, {"index": 20, "element": "O", "displacement": 0.3256766985359173, "vec": [-0.2261802918156199, 0.10136427634866993, -0.2112654042756794], "cn_before": 3, "cn_after": 3}, {"index": 21, "element": "O", "displacement": 0.15563642341803374, "vec": [0.15476824577115247, -0.013944953941485056, -0.008661677369163595], "cn_before": 3, "cn_after": 3}, {"index": 22, "element": "O", "displacement": 0.2619716844942965, "vec": [-0.11391255152403276, 0.07894832606754583, 0.22230667082477815], "cn_before": 3, "cn_after": 3}, {"index": 23, "element": "O", "displacement": 0.20763098948147152, "vec": [-0.16879878116803013, -0.0078086231448908855, -0.12065083784965397], "cn_before": 3, "cn_after": 3}, {"index": 24, "element": "O", "displacement": 0.2856970915933889, "vec": [-0.17378087738375564, -0.03473275048485697, 0.2240907647459172], "cn_before": 3, "cn_after": 2}, {"index": 25, "element": "O", "displacement": 0.3446385976436791, "vec": [0.1712846459879042, 0.2471280154337527, -0.1684193487173459], "cn_before": 3, "cn_after": 3}, {"index": 26, "element": "O", "displacement": 0.21487952612284414, "vec": [0.07042569609119183, -0.07599491353616514, 0.18825037899956518], "cn_before": 3, "cn_after": 3}, {"index": 27, "element": "O", "displacement": 0.4215101849886641, "vec": [0.3473288959743072, -0.19620440919234866, -0.13615176783254826], "cn_before": 3, "cn_after": 3}, {"index": 28, "element": "O", "displacement": 0.2527745196854775, "vec": [-0.03356397487936102, -0.07099512155893418, -0.24026674781865595], "cn_before": 3, "cn_after": 3}, {"index": 29, "element": "O", "displacement": 0.36816842201844424, "vec": [0.2631706400049121, -0.13955966467304368, 0.216361505835266], "cn_before": 3, "cn_after": 3}, {"index": 30, "element": "O", "displacement": 0.2759613446932687, "vec": [0.12737427727117048, 0.11365472123765002, -0.21682495611657834], "cn_before": 3, "cn_after": 3}, {"index": 31, "element": "O", "displacement": 0.310655264631307, "vec": [-0.22510373866534636, 0.21408114457216754, 0.002064902104585035], "cn_before": 3, "cn_after": 2}, {"index": 32, "element": "Ti", "displacement": 0.334689773519426, "vec": [0.04821092156883749, 0.058390818331043676, 0.3260114474594399], "cn_before": 6, "cn_after": 6}, {"index": 33, "element": "Ti", "displacement": 0.2768327036086067, "vec": [-0.10031093876429238, 0.1959128673126527, 0.16790535957143238], "cn_before": 6, "cn_after": 6}, {"index": 34, "element": "Ti", "displacement": 0.3856395729882782, "vec": [0.1537758130811121, -0.17827173400918556, -0.30543422928542674], "cn_before": 6, "cn_after": 4}, {"index": 35, "element": "Ti", "displacement": 0.22200726235714846, "vec": [-0.18561729562352058, -0.11388295745822856, 0.0431754108873745], "cn_before": 6, "cn_after": 6}, {"index": 36, "element": "Ti", "displacement": 0.1983232146810183, "vec": [-0.16769703495084945, 0.027855970826449163, 0.10214620325505429], "cn_before": 6, "cn_after": 6}, {"index": 37, "element": "Ti", "displacement": 0.10285231750966106, "vec": [-0.02638214778982849, -0.06258222036059764, 0.07724019154456686], "cn_before": 6, "cn_after": 6}, {"index": 38, "element": "Ti", "displacement": 0.3818207106398474, "vec": [-0.1352819626396983, -0.05192868149999502, 0.3532552302451323], "cn_before": 6, "cn_after": 6}, {"index": 39, "element": "Ti", "displacement": 0.22670208865449232, "vec": [-0.14532907884822538, 0.03862872380813788, -0.169649985376923], "cn_before": 6, "cn_after": 6}, {"index": 40, "element": "Ti", "displacement": 0.20130109728254303, "vec": [-0.12195538154131609, 0.04593476384974646, 0.15342429452448492], "cn_before": 6, "cn_after": 6}, {"index": 41, "element": "Ti", "displacement": 0.22624391679912628, "vec": [0.04487454928003271, -0.14194317430362724, -0.17036642857128273], "cn_before": 6, "cn_after": 6}, {"index": 42, "element": "Ti", "displacement": 0.3463226874565486, "vec": [0.3134746115362251, -0.11308877954620158, 0.09425497180568064], "cn_before": 6, "cn_after": 6}, {"index": 43, "element": "Ti", "displacement": 0.13477859267597947, "vec": [-0.033423142198971925, 0.07906875684482609, 0.10390521786839513], "cn_before": 6, "cn_after": 6}, {"index": 44, "element": "Ti", "displacement": 0.24758566491002823, "vec": [-0.0273796872638906, -0.10581610024091313, -0.22215302636713585], "cn_before": 6, "cn_after": 6}, {"index": 45, "element": "Ti", "displacement": 0.22364458177338012, "vec": [0.20096943442725343, -0.027768344770932353, -0.0941121905560731], "cn_before": 6, "cn_after": 6}, {"index": 46, "element": "Ti", "displacement": 0.31776948782534703, "vec": [-0.1306015363963648, 0.2620889600588836, -0.12341014179938892], "cn_before": 6, "cn_after": 6}, {"index": 47, "element": "Ti", "displacement": 0.0922545707633773, "vec": [-0.06565154401002847, -0.006457949775855349, 0.06449089455517588], "cn_before": 6, "cn_after": 6}], "max_displacement": 0.6441412796231147, "severity_overall": "warn", "viewer_lib": "embedded", "threedmol_url": "https://3Dmol.org/build/3Dmol-min.js"}</script>
+<script>
+  window.__RELAXDIFF__ = JSON.parse(document.getElementById("relaxdiff-payload").textContent);
+</script>
+<script>// In-page viewer logic. Reads window.__RELAXDIFF__ payload and drives 3Dmol.js.
+
+(function () {
+  const data = window.__RELAXDIFF__;
+  if (!data) return;
+
+  const containerId = "viewer";
+  const viewer = $3Dmol.createViewer(containerId, { backgroundColor: "#050709" });
+
+  function addStructure(cif, opacity, hidden) {
+    const model = viewer.addModel(cif, "cif", { keepH: true });
+    model.setStyle({}, { stick: { radius: 0.12 }, sphere: { scale: 0.28, opacity: opacity } });
+    if (hidden) viewer.setStyle({ model: model }, { sphere: { hidden: true }, stick: { hidden: true } });
+    return model;
+  }
+
+  const beforeModel = addStructure(data.before_cif, 0.5, false);
+  const afterModel = addStructure(data.after_cif, 1.0, false);
+
+  function addArrows() {
+    const top = [...data.displacements]
+      .sort((a, b) => b.displacement - a.displacement)
+      .slice(0, Math.min(20, data.displacements.length));
+
+    // Pull start positions from the after model atoms in input order
+    const afterAtoms = afterModel.selectedAtoms({});
+    top.forEach((d) => {
+      if (d.displacement < 0.05) return;
+      const a = afterAtoms[d.index];
+      if (!a) return;
+      const end = { x: a.x, y: a.y, z: a.z };
+      const start = { x: a.x - d.vec[0], y: a.y - d.vec[1], z: a.z - d.vec[2] };
+      viewer.addArrow({
+        start: start,
+        end: end,
+        radius: 0.06,
+        radiusRatio: 2.0,
+        color: d.displacement > 1.0 ? "#f85149" : d.displacement > 0.3 ? "#d29922" : "#58a6ff",
+      });
+    });
+  }
+
+  function addUnitCell() {
+    viewer.addUnitCell(afterModel, { box: { color: "#3a4252" } });
+  }
+
+  addArrows();
+  addUnitCell();
+  viewer.zoomTo();
+  viewer.render();
+
+  // Toggle modes
+  const state = { mode: "both", arrows: true };
+
+  function setMode(mode) {
+    state.mode = mode;
+    if (mode === "before") {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+      viewer.setStyle({ model: afterModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+    } else if (mode === "after") {
+      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+    } else {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.10 }, sphere: { scale: 0.24, opacity: 0.45 } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.30 } });
+    }
+    viewer.render();
+  }
+
+  function toggleArrows() {
+    state.arrows = !state.arrows;
+    viewer.removeAllShapes();
+    if (state.arrows) addArrows();
+    addUnitCell();
+    viewer.render();
+  }
+
+  document.querySelectorAll("[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      setMode(btn.dataset.mode);
+    });
+  });
+
+  const arrowsBtn = document.getElementById("toggle-arrows");
+  if (arrowsBtn) {
+    arrowsBtn.addEventListener("click", () => {
+      arrowsBtn.classList.toggle("active");
+      toggleArrows();
+    });
+  }
+
+  // Default: both view + arrows
+  setMode("both");
+})();</script>
+
+</body>
+</html>

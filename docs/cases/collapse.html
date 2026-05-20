@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RelaxDiff · Si — overexpanded initial guess collapsing</title>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <style>:root {
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #1b2027;
+  --border: #262c35;
+  --text: #e6e8eb;
+  --text-dim: #9aa3ad;
+  --accent: #5b8def;
+  --ok: #3fb950;
+  --info: #58a6ff;
+  --warn: #d29922;
+  --alert: #f85149;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .title { font-size: 16px; font-weight: 600; }
+header .subtitle { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+
+.severity-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.severity-ok    { background: rgba(63, 185, 80, 0.15);  color: var(--ok); }
+.severity-info  { background: rgba(88, 166, 255, 0.15); color: var(--info); }
+.severity-warn  { background: rgba(210, 153, 34, 0.18); color: var(--warn); }
+.severity-alert { background: rgba(248, 81, 73, 0.18);  color: var(--alert); }
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  padding: 20px 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  main { grid-template-columns: 1fr; }
+}
+
+.viewer-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viewer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-controls button {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.viewer-controls button.active { background: var(--accent); border-color: var(--accent); color: white; }
+.viewer-controls button:hover { border-color: var(--accent); }
+
+#viewer {
+  width: 100%;
+  height: 520px;
+  background: #050709;
+  border-radius: 8px;
+  position: relative;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.narrative p { margin: 0 0 10px; }
+.narrative p:last-child { margin-bottom: 0; }
+
+.finding {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.finding:first-child { border-top: none; }
+.finding .pill {
+  flex-shrink: 0;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 8px;
+}
+.finding .pill.ok    { background: var(--ok); }
+.finding .pill.info  { background: var(--info); }
+.finding .pill.warn  { background: var(--warn); }
+.finding .pill.alert { background: var(--alert); }
+.finding .body { flex: 1; }
+.finding .rule { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.finding .short { font-size: 13px; margin-top: 2px; }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.stat-label { color: var(--text-dim); font-size: 12px; }
+.stat-value { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+details {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+}
+details summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+details[open] summary { margin-bottom: 10px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+table th, table td {
+  text-align: left;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+table th { color: var(--text-dim); font-weight: 500; }
+
+footer {
+  padding: 20px 28px;
+  color: var(--text-dim);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+footer a { color: var(--accent); text-decoration: none; }</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">RelaxDiff · Si — overexpanded initial guess collapsing</div>
+    <div class="subtitle">
+      Si · 16 atoms ·
+      RMSD 0.121 Å ·
+      ΔV -52.5%
+    </div>
+  </div>
+  <div class="severity-chip severity-alert">
+    alert
+  </div>
+</header>
+
+<main>
+  <section class="viewer-card">
+    <div class="viewer-controls">
+      <button data-mode="before">Before</button>
+      <button data-mode="after">After</button>
+      <button data-mode="both" class="active">Overlay</button>
+      <button id="toggle-arrows" class="active">Displacement arrows</button>
+    </div>
+    <div id="viewer"></div>
+    <div style="color: var(--text-dim); font-size: 12px;">
+      Red arrows mark displacements &gt; 1.0 Å · Orange &gt; 0.3 Å · Blue smaller.
+      Before atoms are translucent in overlay mode.
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="card narrative">
+      <h3>Narrative</h3>
+      <p>This relaxation of Si looks broken and needs manual review before being trusted. Overall RMSD is 0.121 Å across 16 atoms — the largest atomic displacement is 0.25 Å (atom 13, Si); cell volume changed by -52.5%; space group went from Fd-3m to P1.</p>
+<p>Specifically: Cell volume collapsed by 52.5%; Symmetry broken: Fd-3m → P1.</p>
+<p>This pattern is consistent with either a poor initial guess (misplaced atoms, wrong lattice scaling) or the optimizer crossing a barrier into a different basin. Re-check the input geometry and optimizer settings before drawing physical conclusions.</p>
+    </div>
+
+    <div class="card">
+      <h3>Findings (2)</h3>
+      
+      <div class="finding">
+        <div class="pill alert"></div>
+        <div class="body">
+          <div class="rule">cell_collapse</div>
+          <div class="short">Cell volume collapsed by 52.5%.</div>
+        </div>
+      </div>
+      
+      <div class="finding">
+        <div class="pill warn"></div>
+        <div class="body">
+          <div class="rule">symmetry_broken</div>
+          <div class="short">Symmetry broken: Fd-3m → P1.</div>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="card">
+      <h3>Summary stats</h3>
+      <div class="stats">
+        <div class="stat-label">Max displacement</div>
+        <div class="stat-value">0.249 Å</div>
+        <div class="stat-label">RMSD</div>
+        <div class="stat-value">0.1211 Å</div>
+        <div class="stat-label">Volume Δ</div>
+        <div class="stat-value">-52.54%</div>
+        <div class="stat-label">Space group</div>
+        <div class="stat-value">Fd-3m → P1</div>
+        <div class="stat-label">Bonds broken</div>
+        <div class="stat-value">0</div>
+        <div class="stat-label">Bonds formed</div>
+        <div class="stat-value">0</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<details>
+  <summary>Per-atom displacement table</summary>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Element</th><th>Displacement (Å)</th><th>CN before</th><th>CN after</th><th>ΔCN</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>0</td>
+        <td>Si</td>
+        <td>0.044</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>Si</td>
+        <td>0.164</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>Si</td>
+        <td>0.164</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>Si</td>
+        <td>0.091</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>Si</td>
+        <td>0.039</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>Si</td>
+        <td>0.163</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>Si</td>
+        <td>0.025</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>7</td>
+        <td>Si</td>
+        <td>0.023</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>8</td>
+        <td>Si</td>
+        <td>0.128</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>Si</td>
+        <td>0.101</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>Si</td>
+        <td>0.125</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>Si</td>
+        <td>0.066</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>12</td>
+        <td>Si</td>
+        <td>0.089</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>13</td>
+        <td>Si</td>
+        <td>0.249</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>14</td>
+        <td>Si</td>
+        <td>0.148</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+      <tr>
+        <td>15</td>
+        <td>Si</td>
+        <td>0.059</td>
+        <td>4</td>
+        <td>4</td>
+        <td>—</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</details>
+
+<details>
+  <summary>Bond changes (27)</summary>
+  
+  <table>
+    <thead>
+      <tr><th>i</th><th>j</th><th>Pair</th><th>Before (Å)</th><th>After (Å)</th><th>Δ (Å)</th><th>Kind</th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>0</td>
+        <td>1</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.589</td>
+        <td>-0.762</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>0</td>
+        <td>3</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.965</td>
+        <td>-0.387</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>0</td>
+        <td>5</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.808</td>
+        <td>-0.544</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>0</td>
+        <td>9</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.811</td>
+        <td>-0.540</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>2</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.920</td>
+        <td>-0.431</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>4</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.739</td>
+        <td>-0.612</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>1</td>
+        <td>8</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.933</td>
+        <td>-0.418</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>7</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.788</td>
+        <td>-0.563</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>2</td>
+        <td>11</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.727</td>
+        <td>-0.624</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>6</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.690</td>
+        <td>-0.661</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>3</td>
+        <td>10</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.914</td>
+        <td>-0.437</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>7</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.994</td>
+        <td>-0.357</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>4</td>
+        <td>13</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.845</td>
+        <td>-0.506</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>6</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.895</td>
+        <td>-0.456</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>5</td>
+        <td>12</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.529</td>
+        <td>-0.822</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>7</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.754</td>
+        <td>-0.597</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>6</td>
+        <td>15</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.914</td>
+        <td>-0.438</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>7</td>
+        <td>14</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.773</td>
+        <td>-0.578</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>8</td>
+        <td>13</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.639</td>
+        <td>-0.712</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>10</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.783</td>
+        <td>-0.569</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>9</td>
+        <td>12</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.775</td>
+        <td>-0.576</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>11</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.813</td>
+        <td>-0.539</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>10</td>
+        <td>15</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.775</td>
+        <td>-0.576</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>11</td>
+        <td>14</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.990</td>
+        <td>-0.362</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>12</td>
+        <td>15</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.706</td>
+        <td>-0.645</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>13</td>
+        <td>14</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.697</td>
+        <td>-0.655</td>
+        <td>compressed</td>
+      </tr>
+      
+      <tr>
+        <td>14</td>
+        <td>15</td>
+        <td>Si–Si</td>
+        <td>2.351</td>
+        <td>1.912</td>
+        <td>-0.440</td>
+        <td>compressed</td>
+      </tr>
+      
+    </tbody>
+  </table>
+  
+</details>
+
+<footer>
+  Generated by <a href="https://github.com/zoe/relaxdiff">RelaxDiff</a>.
+  Drop two structures, get a sanity check.
+</footer>
+
+<script id="relaxdiff-payload" type="application/json">{"title": "RelaxDiff \u00b7 Si \u2014 overexpanded initial guess collapsing", "narrative_html": "<p>This relaxation of Si looks broken and needs manual review before being trusted. Overall RMSD is 0.121 \u00c5 across 16 atoms \u2014 the largest atomic displacement is 0.25 \u00c5 (atom 13, Si); cell volume changed by -52.5%; space group went from Fd-3m to P1.</p>\n<p>Specifically: Cell volume collapsed by 52.5%; Symmetry broken: Fd-3m \u2192 P1.</p>\n<p>This pattern is consistent with either a poor initial guess (misplaced atoms, wrong lattice scaling) or the optimizer crossing a barrier into a different basin. Re-check the input geometry and optimizer settings before drawing physical conclusions.</p>", "diagnosis": {"findings": [{"rule": "cell_collapse", "severity": "alert", "short": "Cell volume collapsed by 52.5%.", "magnitude": -0.5254479999999998, "atoms_involved": [], "detail": {"volume_before": 320.2060139999999, "volume_after": 151.95440435572803}}, {"rule": "symmetry_broken", "severity": "warn", "short": "Symmetry broken: Fd-3m \u2192 P1.", "magnitude": 226.0, "atoms_involved": [], "detail": {"before": {"space_group_number": 227, "space_group_symbol": "Fd-3m", "point_group": "m-3m", "crystal_system": "cubic", "n_symmetry_ops": 384, "symprec": 0.2}, "after": {"space_group_number": 1, "space_group_symbol": "P1", "point_group": "1", "crystal_system": "triclinic", "n_symmetry_ops": 1, "symprec": 0.2}}}], "overall_severity": "alert", "summary_stats": {"max_displacement": 0.24882498392083616, "rmsd": 0.12108390348542526, "volume_change_frac": -0.5254479999999998, "space_group_before": 227, "space_group_after": 1, "bonds_broken": 0, "bonds_formed": 0, "n_atoms_moved_over_0p5A": 0}}, "geometry": {"per_atom": [{"index": 0, "element": "Si", "displacement": 0.04373811820388071, "displacement_vec": [-0.030338238134763138, 0.006356336670918628, -0.030857920782531346], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 1, "element": "Si", "displacement": 0.1636253702748522, "displacement_vec": [-0.10845924989616194, -0.03584805573452907, -0.11715276270578717], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 2, "element": "Si", "displacement": 0.16420055092623237, "displacement_vec": [-0.11191025004801276, -0.014536016810110129, -0.11927540012075283], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 3, "element": "Si", "displacement": 0.09083076388593203, "displacement_vec": [0.058913059087797384, -0.015018534484131894, 0.06748275897567149], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 4, "element": "Si", "displacement": 0.038506765300386915, "displacement_vec": [-0.015079235575460686, 0.020976472126018247, -0.02855477622929695], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 5, "element": "Si", "displacement": 0.1631174619328077, "displacement_vec": [0.09320715471824016, 0.028969813037436853, 0.13069232046798682], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 6, "element": "Si", "displacement": 0.024623764446473094, "displacement_vec": [0.012609984409943261, 0.00920533935715351, 0.019041528195394952], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 7, "element": "Si", "displacement": 0.022675639627812796, "displacement_vec": [-0.01664952052827537, -0.002607250323491393, -0.01517169550378682], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 8, "element": "Si", "displacement": 0.1277543443386922, "displacement_vec": [-0.07500364989420143, 0.0029652943415293966, -0.10337713494494462], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 9, "element": "Si", "displacement": 0.1007742839341626, "displacement_vec": [0.06940451602219762, 0.009418042254999875, 0.07245529613665776], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 10, "element": "Si", "displacement": 0.12473623799977213, "displacement_vec": [-0.09291086026908292, 0.0007801799297009285, -0.08322314842441395], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 11, "element": "Si", "displacement": 0.06643536890389903, "displacement_vec": [-0.05516151319353833, -0.016755607083495796, -0.033016894688322175], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 12, "element": "Si", "displacement": 0.0886292071120103, "displacement_vec": [-0.0595648535419071, -0.006552931352534009, -0.06530102347225311], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 13, "element": "Si", "displacement": 0.24882498392083616, "displacement_vec": [0.1785402045907285, 0.014847118130611826, 0.17267550796543452], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 14, "element": "Si", "displacement": 0.14767825369701978, "displacement_vec": [0.10435072385539305, -0.01669119624914498, 0.10315617777733611], "cn_before": 4, "cn_after": 4, "cn_change": 0}, {"index": 15, "element": "Si", "displacement": 0.05869216375006706, "displacement_vec": [0.04805172839710174, 0.014490996189067292, 0.030427167353605067], "cn_before": 4, "cn_after": 4, "cn_change": 0}], "bond_changes": [{"i": 0, "j": 1, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.5894036586053746, "delta": -0.7618553126693763, "kind": "compressed"}, {"i": 0, "j": 3, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.9645656892022831, "delta": -0.3866932820724678, "kind": "compressed"}, {"i": 0, "j": 5, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.807533086784916, "delta": -0.5437258844898349, "kind": "compressed"}, {"i": 0, "j": 9, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.8112219959855542, "delta": -0.5400369752891967, "kind": "compressed"}, {"i": 1, "j": 2, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.9200175195642661, "delta": -0.4312414517104848, "kind": "compressed"}, {"i": 1, "j": 4, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7388458365965693, "delta": -0.6124131346781816, "kind": "compressed"}, {"i": 1, "j": 8, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.9331698190607374, "delta": -0.41808915221401355, "kind": "compressed"}, {"i": 2, "j": 7, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7880127116828786, "delta": -0.5632462595918724, "kind": "compressed"}, {"i": 2, "j": 11, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.727334373728271, "delta": -0.62392459754648, "kind": "compressed"}, {"i": 3, "j": 6, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.6902542145985189, "delta": -0.661004756676232, "kind": "compressed"}, {"i": 3, "j": 10, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.9144840938491041, "delta": -0.4367748774256468, "kind": "compressed"}, {"i": 4, "j": 7, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.9939458282409512, "delta": -0.3573131430337997, "kind": "compressed"}, {"i": 4, "j": 13, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.845118748356158, "delta": -0.506140222918593, "kind": "compressed"}, {"i": 5, "j": 6, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.8950175793341937, "delta": -0.45624139194055724, "kind": "compressed"}, {"i": 5, "j": 12, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.5291050324515245, "delta": -0.8221539388232264, "kind": "compressed"}, {"i": 6, "j": 7, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.754276047317014, "delta": -0.5969829239577369, "kind": "compressed"}, {"i": 6, "j": 15, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.913674596548688, "delta": -0.4375843747260628, "kind": "compressed"}, {"i": 7, "j": 14, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7731385793254877, "delta": -0.5781203919492632, "kind": "compressed"}, {"i": 8, "j": 13, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.6390700809182204, "delta": -0.7121888903565305, "kind": "compressed"}, {"i": 9, "j": 10, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7826414888343485, "delta": -0.5686174824404024, "kind": "compressed"}, {"i": 9, "j": 12, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7749288022437975, "delta": -0.5763301690309535, "kind": "compressed"}, {"i": 10, "j": 11, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.8126613797454079, "delta": -0.5385975915293431, "kind": "compressed"}, {"i": 10, "j": 15, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7748036652630401, "delta": -0.5764553060117108, "kind": "compressed"}, {"i": 11, "j": 14, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.989616745244434, "delta": -0.3616422260303169, "kind": "compressed"}, {"i": 12, "j": 15, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.7060669065136214, "delta": -0.6451920647611296, "kind": "compressed"}, {"i": 13, "j": 14, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.6965438173489373, "delta": -0.6547151539258136, "kind": "compressed"}, {"i": 14, "j": 15, "element_i": "Si", "element_j": "Si", "length_before": 2.351258971274751, "length_after": 1.911631140685174, "delta": -0.4396278305895769, "kind": "compressed"}], "cell": {"a_before": 7.679179643685906, "a_after": 5.989760122075007, "b_before": 7.679179643685906, "b_after": 5.989760122075007, "c_before": 7.679179643685906, "c_after": 5.989760122075007, "alpha_before": 60.00000000000001, "alpha_after": 59.99999999999999, "beta_before": 60.00000000000001, "beta_after": 59.99999999999999, "gamma_before": 60.00000000000001, "gamma_after": 59.99999999999999, "volume_before": 320.2060139999999, "volume_after": 151.95440435572803, "volume_change_frac": -0.5254479999999998}, "strain": [[-0.21999999999999997, 0.0, 0.0], [0.0, -0.21999999999999997, 0.0], [0.0, 0.0, -0.21999999999999997]], "rotation": [[0.0, -1.9767751103098082e-17, 1.0], [-1.976775110309808e-17, -1.0, -1.9767751103098082e-17], [1.0, -1.976775110309808e-17, 0.0]], "rmsd": 0.12108390348542526, "max_displacement": 0.24882498392083616, "max_displacement_index": 13, "formula": "Si", "n_atoms": 16}, "symmetry": {"before": {"space_group_number": 227, "space_group_symbol": "Fd-3m", "point_group": "m-3m", "crystal_system": "cubic", "n_symmetry_ops": 384, "symprec": 0.2}, "after": {"space_group_number": 1, "space_group_symbol": "P1", "point_group": "1", "crystal_system": "triclinic", "n_symmetry_ops": 1, "symprec": 0.2}, "space_group_changed": true, "direction": "broken", "tolerance_scan": [{"symprec": 0.001, "before_sg": 227, "after_sg": 1, "before_symbol": "Fd-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.01, "before_sg": 227, "after_sg": 1, "before_symbol": "Fd-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.05, "before_sg": 227, "after_sg": 1, "before_symbol": "Fd-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.1, "before_sg": 227, "after_sg": 1, "before_symbol": "Fd-3m", "after_symbol": "P1", "changed": true}, {"symprec": 0.2, "before_sg": 227, "after_sg": 1, "before_symbol": "Fd-3m", "after_symbol": "P1", "changed": true}]}, "before_cif": "# generated using pymatgen\ndata_Si\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   7.67917964\n_cell_length_b   7.67917964\n_cell_length_c   7.67917964\n_cell_angle_alpha   60.00000000\n_cell_angle_beta   60.00000000\n_cell_angle_gamma   60.00000000\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   Si\n_chemical_formula_sum   Si16\n_cell_volume   320.20601400\n_cell_formula_units_Z   16\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  Si  Si0  1  0.00000000  0.00000000  0.00000000  1\n  Si  Si1  1  0.12500000  0.12500000  0.12500000  1\n  Si  Si2  1  0.00000000  0.00000000  0.50000000  1\n  Si  Si3  1  0.12500000  0.12500000  0.62500000  1\n  Si  Si4  1  -0.00000000  0.50000000  0.00000000  1\n  Si  Si5  1  0.12500000  0.62500000  0.12500000  1\n  Si  Si6  1  0.00000000  0.50000000  0.50000000  1\n  Si  Si7  1  0.12500000  0.62500000  0.62500000  1\n  Si  Si8  1  0.50000000  0.00000000  0.00000000  1\n  Si  Si9  1  0.62500000  0.12500000  0.12500000  1\n  Si  Si10  1  0.50000000  0.00000000  0.50000000  1\n  Si  Si11  1  0.62500000  0.12500000  0.62500000  1\n  Si  Si12  1  0.50000000  0.50000000  0.00000000  1\n  Si  Si13  1  0.62500000  0.62500000  0.12500000  1\n  Si  Si14  1  0.50000000  0.50000000  0.50000000  1\n  Si  Si15  1  0.62500000  0.62500000  0.62500000  1\n", "after_cif": "# generated using pymatgen\ndata_Si\n_symmetry_space_group_name_H-M   'P 1'\n_cell_length_a   5.98976012\n_cell_length_b   5.98976012\n_cell_length_c   5.98976012\n_cell_angle_alpha   60.00000000\n_cell_angle_beta   60.00000000\n_cell_angle_gamma   60.00000000\n_symmetry_Int_Tables_number   1\n_chemical_formula_structural   Si\n_chemical_formula_sum   Si16\n_cell_volume   151.95440436\n_cell_formula_units_Z   16\nloop_\n _symmetry_equiv_pos_site_id\n _symmetry_equiv_pos_as_xyz\n  1  'x, y, z'\nloop_\n _atom_site_type_symbol\n _atom_site_label\n _atom_site_symmetry_multiplicity\n _atom_site_fract_x\n _atom_site_fract_y\n _atom_site_fract_z\n _atom_site_occupancy\n  Si  Si_12  1  0.00488586  -0.01165236  0.00575592  1\n  Si  Si_15  1  0.08771424  0.13166619  0.10226892  1\n  Si  Si_14  1  -0.01833347  -0.01175079  0.49399727  1\n  Si  Si_9  1  0.11960168  0.15064916  0.60525428  1\n  Si  Si_16  1  0.00627903  0.47792613  0.02883979  1\n  Si  Si_11  1  0.18062948  0.62391441  0.11787180  1\n  Si  Si_10  1  0.01308964  0.49556893  0.50232195  1\n  Si  Si_13  1  0.12405456  0.62389025  0.62158038  1\n  Si  Si_8  1  0.47873080  -0.02093785  0.02623370  1\n  Si  Si_3  1  0.63543765  0.13179323  0.13033004  1\n  Si  Si_2  1  0.50876268  -0.01887624  0.49254350  1\n  Si  Si_5  1  0.62951114  0.12990302  0.59243661  1\n  Si  Si_4  1  0.48971279  0.49256661  -0.00068371  1\n  Si  Si_7  1  0.63251919  0.64890889  0.14233787  1\n  Si  Si_6  1  0.48502784  0.53544125  0.48702775  1\n  Si  Si_1  1  0.62237689  0.62098915  0.65188394  1\n", "displacements": [{"index": 0, "element": "Si", "displacement": 0.04373811820388071, "vec": [-0.030338238134763138, 0.006356336670918628, -0.030857920782531346], "cn_before": 4, "cn_after": 4}, {"index": 1, "element": "Si", "displacement": 0.1636253702748522, "vec": [-0.10845924989616194, -0.03584805573452907, -0.11715276270578717], "cn_before": 4, "cn_after": 4}, {"index": 2, "element": "Si", "displacement": 0.16420055092623237, "vec": [-0.11191025004801276, -0.014536016810110129, -0.11927540012075283], "cn_before": 4, "cn_after": 4}, {"index": 3, "element": "Si", "displacement": 0.09083076388593203, "vec": [0.058913059087797384, -0.015018534484131894, 0.06748275897567149], "cn_before": 4, "cn_after": 4}, {"index": 4, "element": "Si", "displacement": 0.038506765300386915, "vec": [-0.015079235575460686, 0.020976472126018247, -0.02855477622929695], "cn_before": 4, "cn_after": 4}, {"index": 5, "element": "Si", "displacement": 0.1631174619328077, "vec": [0.09320715471824016, 0.028969813037436853, 0.13069232046798682], "cn_before": 4, "cn_after": 4}, {"index": 6, "element": "Si", "displacement": 0.024623764446473094, "vec": [0.012609984409943261, 0.00920533935715351, 0.019041528195394952], "cn_before": 4, "cn_after": 4}, {"index": 7, "element": "Si", "displacement": 0.022675639627812796, "vec": [-0.01664952052827537, -0.002607250323491393, -0.01517169550378682], "cn_before": 4, "cn_after": 4}, {"index": 8, "element": "Si", "displacement": 0.1277543443386922, "vec": [-0.07500364989420143, 0.0029652943415293966, -0.10337713494494462], "cn_before": 4, "cn_after": 4}, {"index": 9, "element": "Si", "displacement": 0.1007742839341626, "vec": [0.06940451602219762, 0.009418042254999875, 0.07245529613665776], "cn_before": 4, "cn_after": 4}, {"index": 10, "element": "Si", "displacement": 0.12473623799977213, "vec": [-0.09291086026908292, 0.0007801799297009285, -0.08322314842441395], "cn_before": 4, "cn_after": 4}, {"index": 11, "element": "Si", "displacement": 0.06643536890389903, "vec": [-0.05516151319353833, -0.016755607083495796, -0.033016894688322175], "cn_before": 4, "cn_after": 4}, {"index": 12, "element": "Si", "displacement": 0.0886292071120103, "vec": [-0.0595648535419071, -0.006552931352534009, -0.06530102347225311], "cn_before": 4, "cn_after": 4}, {"index": 13, "element": "Si", "displacement": 0.24882498392083616, "vec": [0.1785402045907285, 0.014847118130611826, 0.17267550796543452], "cn_before": 4, "cn_after": 4}, {"index": 14, "element": "Si", "displacement": 0.14767825369701978, "vec": [0.10435072385539305, -0.01669119624914498, 0.10315617777733611], "cn_before": 4, "cn_after": 4}, {"index": 15, "element": "Si", "displacement": 0.05869216375006706, "vec": [0.04805172839710174, 0.014490996189067292, 0.030427167353605067], "cn_before": 4, "cn_after": 4}], "max_displacement": 0.24882498392083616, "severity_overall": "alert", "viewer_lib": "embedded", "threedmol_url": "https://3Dmol.org/build/3Dmol-min.js"}</script>
+<script>
+  window.__RELAXDIFF__ = JSON.parse(document.getElementById("relaxdiff-payload").textContent);
+</script>
+<script>// In-page viewer logic. Reads window.__RELAXDIFF__ payload and drives 3Dmol.js.
+
+(function () {
+  const data = window.__RELAXDIFF__;
+  if (!data) return;
+
+  const containerId = "viewer";
+  const viewer = $3Dmol.createViewer(containerId, { backgroundColor: "#050709" });
+
+  function addStructure(cif, opacity, hidden) {
+    const model = viewer.addModel(cif, "cif", { keepH: true });
+    model.setStyle({}, { stick: { radius: 0.12 }, sphere: { scale: 0.28, opacity: opacity } });
+    if (hidden) viewer.setStyle({ model: model }, { sphere: { hidden: true }, stick: { hidden: true } });
+    return model;
+  }
+
+  const beforeModel = addStructure(data.before_cif, 0.5, false);
+  const afterModel = addStructure(data.after_cif, 1.0, false);
+
+  function addArrows() {
+    const top = [...data.displacements]
+      .sort((a, b) => b.displacement - a.displacement)
+      .slice(0, Math.min(20, data.displacements.length));
+
+    // Pull start positions from the after model atoms in input order
+    const afterAtoms = afterModel.selectedAtoms({});
+    top.forEach((d) => {
+      if (d.displacement < 0.05) return;
+      const a = afterAtoms[d.index];
+      if (!a) return;
+      const end = { x: a.x, y: a.y, z: a.z };
+      const start = { x: a.x - d.vec[0], y: a.y - d.vec[1], z: a.z - d.vec[2] };
+      viewer.addArrow({
+        start: start,
+        end: end,
+        radius: 0.06,
+        radiusRatio: 2.0,
+        color: d.displacement > 1.0 ? "#f85149" : d.displacement > 0.3 ? "#d29922" : "#58a6ff",
+      });
+    });
+  }
+
+  function addUnitCell() {
+    viewer.addUnitCell(afterModel, { box: { color: "#3a4252" } });
+  }
+
+  addArrows();
+  addUnitCell();
+  viewer.zoomTo();
+  viewer.render();
+
+  // Toggle modes
+  const state = { mode: "both", arrows: true };
+
+  function setMode(mode) {
+    state.mode = mode;
+    if (mode === "before") {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+      viewer.setStyle({ model: afterModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+    } else if (mode === "after") {
+      viewer.setStyle({ model: beforeModel }, { stick: { hidden: true }, sphere: { hidden: true } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.32 } });
+    } else {
+      viewer.setStyle({ model: beforeModel }, { stick: { radius: 0.10 }, sphere: { scale: 0.24, opacity: 0.45 } });
+      viewer.setStyle({ model: afterModel }, { stick: { radius: 0.14 }, sphere: { scale: 0.30 } });
+    }
+    viewer.render();
+  }
+
+  function toggleArrows() {
+    state.arrows = !state.arrows;
+    viewer.removeAllShapes();
+    if (state.arrows) addArrows();
+    addUnitCell();
+    viewer.render();
+  }
+
+  document.querySelectorAll("[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-mode]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      setMode(btn.dataset.mode);
+    });
+  });
+
+  const arrowsBtn = document.getElementById("toggle-arrows");
+  if (arrowsBtn) {
+    arrowsBtn.addEventListener("click", () => {
+      arrowsBtn.classList.toggle("active");
+      toggleArrows();
+    });
+  }
+
+  // Default: both view + arrows
+  setMode("both");
+})();</script>
+
+</body>
+</html>
